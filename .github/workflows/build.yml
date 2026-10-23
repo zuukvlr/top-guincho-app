@@ -26,8 +26,7 @@ jobs:
           gradle-version: 8.9
 
       - name: Restaurar keystore
-        run: printf %s "${{ secrets.KEYSTORE_B64 }}" | tr -d '
- ' | base64 -d > "$RUNNER_TEMP/release.jks"
+        run: printf %s "${{ secrets.KEYSTORE_B64 }}" | tr -d "[:space:]" | base64 -d > "$RUNNER_TEMP/release.jks"
 
       - name: Compilar
         env:
