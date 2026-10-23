@@ -15,6 +15,11 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import androidx.webkit.WebViewAssetLoader
 import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.print.PdfPrint
+import android.widget.Toast
+import androidx.core.content.FileProvider
+import java.io.File
 import org.json.JSONObject
 import kotlin.concurrent.thread
 
@@ -102,6 +107,33 @@ class MainActivity : Activity() {
                     Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), null
                 )
             )
+        }
+
+        /** Gera o PDF do documento aberto e envia ao WhatsApp (direto na conversa do número, se informado). */
+        @JavascriptInterface fun sharePdf(name: String, phone: String, text: String) = runOnUiThread {
+            val dir = File(cacheDir, "docs").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
+            val file = File(dir, name.replace(Regex("[^A-Za-z0-9._-]"), "_") + ".pdf")
+            PdfPrint.export(web.createPrintDocumentAdapter(name), file) { ok ->
+                runOnUiThread {
+                    if (!ok) {
+                        Toast.makeText(this@MainActivity, "Não foi possível gerar o PDF.", Toast.LENGTH_LONG).show()
+                        return@runOnUiThread
+                    }
+                    val uri = FileProvider.getUriForFile(this@MainActivity, "$packageName.fileprovider", file)
+                    var d = phone.filter { it.isDigit() }
+                    if (d.length in 10..11) d = "55$d"
+                    val send = Intent(Intent.ACTION_SEND)
+                        .setType("application/pdf")
+                        .putExtra(Intent.EXTRA_STREAM, uri)
+                        .putExtra(Intent.EXTRA_TEXT, text)
+                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    if (d.isNotEmpty()) send.putExtra("jid", "$d@s.whatsapp.net")
+                    for (pkg in listOf("com.whatsapp", "com.whatsapp.w4b")) {
+                        try { startActivity(Intent(send).setPackage(pkg)); return@runOnUiThread } catch (_: ActivityNotFoundException) {}
+                    }
+                    startActivity(Intent.createChooser(send, null))
+                }
+            }
         }
 
         @JavascriptInterface fun openWhatsApp(phone: String, text: String) = runOnUiThread {

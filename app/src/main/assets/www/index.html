@@ -257,7 +257,7 @@ nav.bar button{font-size:11px}
     <div class="noprint" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <button class="btn sm ghost" onclick="back()">← Voltar</button>
       <button class="btn sm" onclick="printDoc()">PDF / Imprimir</button>
-      <button class="btn sm" id="btnWa" onclick="shareWa()">WhatsApp</button>
+      <button class="btn sm" id="btnWa" onclick="shareWa()">Enviar PDF (WhatsApp)</button>
       <button class="btn sm ghost" onclick="delDoc()">Excluir</button>
     </div>
     <div class="doc" id="doc"></div>
@@ -470,14 +470,18 @@ function checkDoc(c){
 function openDoc(t,id){
   const o=(t==='r'?recibos:checks).find(x=>x.id===id);if(!o)return;
   curDoc={t,id,o};$('#doc').innerHTML=t==='r'?receiptDoc(o):checkDoc(o);
-  $('#btnWa').style.display=t==='r'?'inline-block':'none';
+  
   const from=cur==='doc'?prev:cur;prev=from;cur='doc';
   $$('.view').forEach(e=>e.classList.remove('on','print'));$('#v-doc').classList.add('on','print');
   $$('#nav button').forEach(b=>b.classList.remove('on'));window.scrollTo(0,0);
 }
 function printDoc(){const n=(curDoc.t==='r'?'Recibo-':'Checklist-')+num6(curDoc.id);if(A)A.print(n);else window.print()}
-function shareWa(){const r=curDoc.o,txt=`Olá, ${r.client}! Segue o recibo ${num6(r.id)} da ${CO.nome} no valor de ${money(r.final)}. Obrigado!`;
-  if(A)A.openWhatsApp(r.phone||'',txt);else window.open('https://wa.me/?text='+encodeURIComponent(txt))}
+function shareWa(){
+  const o=curDoc.o,isR=curDoc.t==='r',name=(isR?'Recibo-':'Checklist-')+num6(o.id);
+  const txt=isR?`Olá, ${o.client}! Segue o recibo ${num6(o.id)} da ${CO.nome} no valor de ${money(o.final)}. Obrigado!`:`Olá! Segue o checklist ${num6(o.id)} do veículo ${o.modelo} - ${CO.nome}.`;
+  const phone=(isR?o.phone:o.entTel)||'';
+  if(A&&A.sharePdf)A.sharePdf(name,phone,txt);else if(A)A.openWhatsApp(phone,txt);else window.open('https://wa.me/?text='+encodeURIComponent(txt))
+}
 function delDoc(){
   if(!confirm('Excluir este registro? Isso não pode ser desfeito.'))return;
   if(curDoc.t==='r'){recibos=recibos.filter(x=>x.id!==curDoc.id);del('recibos',curDoc.id)}else{checks=checks.filter(x=>x.id!==curDoc.id);del('checklists',curDoc.id)}
