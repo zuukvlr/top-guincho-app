@@ -312,13 +312,18 @@ const FB={apiKey:'AIzaSyCWEEOXgqY2VhJFgxO-fGHaGJooZIjntLo',authDomain:'top-guinc
 function initFirebase(){
   if(typeof firebase==='undefined'){$('#login').style.display='flex';$('#lerr').style.display='block';$('#lerr').textContent='Não foi possível carregar o Firebase.';return}
   firebase.initializeApp(FB);auth=firebase.auth();fs=firebase.firestore();
+  fs.settings({experimentalForceLongPolling:true,merge:true}); // mais estável dentro do WebView
   fs.enablePersistence({synchronizeTabs:false}).catch(()=>{});
   auth.onAuthStateChanged(u=>{if(u){$('#login').style.display='none';startData(u)}else{stopData();$('#login').style.display='flex'}});
 }
 function startData(u){
   stopData();$('#acct').textContent=u.email||'';
-  const L=(col,set)=>fs.collection(col).onSnapshot(sn=>{set(sn.docs.map(d=>d.data()));
-    $('#syncTxt').textContent=sn.metadata.fromCache?'Sem conexão: dados salvos no aparelho, sincroniza ao voltar a internet.':'Sincronizado com a nuvem.';refresh()},e=>{$('#syncTxt').textContent='Erro de acesso aos dados: '+(e.code||e.message)});
+  let wait=null;
+  const L=(col,set)=>fs.collection(col).onSnapshot({includeMetadataChanges:true},sn=>{set(sn.docs.map(d=>d.data()));
+    clearTimeout(wait);
+    if(!sn.metadata.fromCache)$('#syncTxt').textContent='Sincronizado com a nuvem.';
+    else{$('#syncTxt').textContent='Conectando à nuvem…';wait=setTimeout(()=>{$('#syncTxt').textContent='Sem conexão com a nuvem: os dados ficam salvos no aparelho e sincronizam quando a internet voltar.'},12000)}
+    refresh()},e=>{clearTimeout(wait);$('#syncTxt').textContent=e.code==='permission-denied'?'Sem permissão: este e-mail não está liberado nas regras do Firebase.':'Erro ao acessar os dados: '+(e.code||e.message)});
   unsubs=[L('recibos',a=>recibos=a),L('checklists',a=>checks=a),L('clientes',a=>clientes=a)];
 }
 function stopData(){unsubs.forEach(f=>f());unsubs=[];recibos=[];checks=[];clientes=[];refresh()}
