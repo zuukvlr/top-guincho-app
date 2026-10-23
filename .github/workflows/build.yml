@@ -11,7 +11,22 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Teste automático do app (navegador headless)
+        working-directory: tests
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+          node smoke.mjs
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

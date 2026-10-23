@@ -312,8 +312,8 @@ const FB={apiKey:'AIzaSyCWEEOXgqY2VhJFgxO-fGHaGJooZIjntLo',authDomain:'top-guinc
 function initFirebase(){
   if(typeof firebase==='undefined'){$('#login').style.display='flex';$('#lerr').style.display='block';$('#lerr').textContent='Não foi possível carregar o Firebase.';return}
   firebase.initializeApp(FB);auth=firebase.auth();fs=firebase.firestore();
-  fs.settings({experimentalForceLongPolling:true,merge:true}); // mais estável dentro do WebView
-  fs.enablePersistence({synchronizeTabs:false}).catch(()=>{});
+  try{fs.settings({experimentalForceLongPolling:true,experimentalAutoDetectLongPolling:false,merge:true})}catch(e){console.warn('settings',e)} // mais estável dentro do WebView
+  try{fs.enablePersistence({synchronizeTabs:false}).catch(()=>{})}catch(e){console.warn('persistence',e)}
   auth.onAuthStateChanged(u=>{if(u){$('#login').style.display='none';startData(u)}else{stopData();$('#login').style.display='flex'}});
 }
 function startData(u){
