@@ -154,6 +154,17 @@ await page.locator('#svcList .svc input').last().fill('Serviço renomeado');
 await page.locator('#svcList .svc .ok').last().click();
 check(await page.locator('#svcList .svc input').last().inputValue() === 'Serviço renomeado', 'editar tipo de serviço mantém o novo nome na lista');
 
+// veículo e marca/modelo são opcionais: o recibo sai sem eles
+const semVeiculo = await page.evaluate(async () => {
+  go('recibo'); const g = document.querySelector('#fR');
+  Object.entries({ client: 'Sem Veiculo', stype: 'Reboque', desc: 'x', orig: 'A', dest: 'B', sdate: '2026-10-23', vtype: '', vmodel: '' }).forEach(([k, v]) => g[k].value = v);
+  const e = g.querySelector('[name=value]'); e.value = '5000'; e.dispatchEvent(new Event('input', { bubbles: true }));
+  const valido = g.checkValidity();
+  await saveReceipt({ preventDefault() {}, target: g });
+  return { valido, doc: document.querySelector('#doc').innerText.includes('Sem Veiculo') };
+});
+check(semVeiculo.valido && semVeiculo.doc, 'recibo pode ser emitido sem veículo e marca/modelo');
+
 await browser.close();
 server.close();
 if (fails.length) { console.error('\n' + fails.length + ' verificação(ões) falharam'); process.exit(1); }
