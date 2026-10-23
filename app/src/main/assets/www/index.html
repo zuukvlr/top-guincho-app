@@ -77,6 +77,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .sugg div{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
 .sugg div:last-child{border:0}.sugg small{color:var(--mut);display:block}
 nav.bar button{font-size:11px}
+.check{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:15px;color:var(--white);font-weight:500}
+.check input{width:22px;height:22px;flex:none;margin:0;accent-color:var(--red)}
+.gear{margin-left:auto;background:none;border:0;color:#fff;padding:6px}
+.gear svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.svc{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.svc input{flex:1}
+.svc button{border:0;border-radius:10px;padding:10px 12px;font-weight:700;color:#fff;background:#333}
+.svc button.del{background:#7f1d1d}
+.svc button.ok{background:var(--red)}
+.chips.svcs{margin-top:8px}
+.chips.svcs button{border:1.5px solid var(--line);background:#111;color:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600}
 #err{background:#7f1d1d;border-radius:10px;padding:10px;margin-top:10px;display:none}
 /* documento (recibo / checklist) — fundo branco para impressão */
 .doc{background:#fff;color:#111;border-radius:6px;padding:16px;font-size:13px}
@@ -140,6 +151,7 @@ nav.bar button{font-size:11px}
 <header class="top">
   <img class="logo" src="logo.jpg" alt="TOP Guincho">
   <h1><b>TOP</b> Guincho<small>Recibo &amp; Checklist</small></h1>
+  <button class="gear" aria-label="Configurações" onclick="go('config')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
 </header>
 
 <div class="upd" id="upd">
@@ -162,7 +174,7 @@ nav.bar button{font-size:11px}
     </div>
     <div class="card"><h2>Últimos registros</h2><div id="recent"></div></div>
     <div class="card"><h2>Empresa</h2>
-      <b>TOP Guincho</b><br><span class="muted">Tel.: (92) 99174-4383<br>CNPJ: 22.678.354/0001-22</span>
+      <b>TOP Guincho</b><br><span class="muted" id="coInfo"></span>
       <p class="muted" style="margin:10px 0 0">Versão <span id="ver">—</span><br>Conta: <span id="acct">—</span><br><span id="syncTxt"></span></p>
       <button class="btn ghost sm" style="margin-top:8px" onclick="logout()">Sair da conta</button>
       <button class="btn ghost sm" style="margin-top:8px" onclick="manualCheck()">Procurar atualização</button>
@@ -178,11 +190,11 @@ nav.bar button{font-size:11px}
         <div class="row"><div><label>CPF / CNPJ</label><input name="doc" inputmode="numeric" maxlength="18" data-mask="doc" placeholder="000.000.000-00"></div>
         <div><label>Telefone</label><input name="phone" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000"></div></div>
         <label>Endereço</label><input name="addr" maxlength="255">
-        <label class="chip" style="display:block;margin-top:12px"><input type="checkbox" name="saveCli" checked><span style="display:inline-block">Salvar / atualizar no cadastro de clientes</span></label>
+        <label class="check"><input type="checkbox" name="saveCli" checked> Salvar / atualizar no cadastro de clientes</label>
       </div>
       <div class="card"><h2>Serviço</h2>
-        <label>Tipo de serviço *</label><input name="stype" required maxlength="120" list="svcs" placeholder="Ex.: Reboque / Guincho plataforma">
-        <datalist id="svcs"><option>Reboque / Guincho plataforma</option><option>Socorro mecânico</option><option>Troca de pneu</option><option>Carga de bateria</option><option>Remoção de veículo</option><option>Transporte de veículo</option></datalist>
+        <label>Tipo de serviço *</label><input name="stype" required maxlength="120" placeholder="Toque em um tipo abaixo ou digite">
+        <div class="chips svcs" id="svcChips"></div>
         <label>Data do serviço *</label><input type="date" name="sdate" required>
         <label>Descrição *</label><textarea name="desc" rows="2" required maxlength="2000"></textarea>
         <div class="row"><div><label>Veículo *</label><input name="vtype" required placeholder="Carro, moto..."></div>
@@ -192,11 +204,11 @@ nav.bar button{font-size:11px}
         <div><label>Destino *</label><input name="dest" required></div></div>
       </div>
       <div class="card"><h2>Valores</h2>
-        <div class="row"><div><label>Valor (R$) *</label><input name="value" inputmode="decimal" required placeholder="0,00" oninput="calc()"></div>
-        <div><label>Desconto (R$)</label><input name="disc" inputmode="decimal" placeholder="0,00" oninput="calc()"></div></div>
+        <div class="row"><div><label>Valor (R$) *</label><input name="value" inputmode="numeric" required placeholder="0,00" data-mask="money" data-calc="1"></div>
+        <div><label>Desconto (R$)</label><input name="disc" inputmode="numeric" placeholder="0,00" data-mask="money" data-calc="1"></div></div>
         <div class="row"><div><label>Situação</label><select name="sit" onchange="calc()"><option value="recebido">Recebido</option><option value="parcial">Parcial</option><option value="pendente">Pendente</option></select></div>
         <div><label>Forma de pagamento</label><select name="method"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option></select></div></div>
-        <div id="recvBox" style="display:none"><label>Valor recebido (R$)</label><input name="recv" inputmode="decimal" placeholder="0,00" oninput="calc()"></div>
+        <div id="recvBox" style="display:none"><label>Valor recebido (R$)</label><input name="recv" inputmode="numeric" placeholder="0,00" data-mask="money" data-calc="1"></div>
         <p style="margin:12px 0 0"><b>Final: <span id="fin">R$ 0,00</span></b> · <span class="muted">Saldo: <span id="bal">R$ 0,00</span></span></p>
         <label>Observações</label><textarea name="notes" rows="2" maxlength="2000"></textarea>
       </div>
@@ -252,6 +264,27 @@ nav.bar button{font-size:11px}
     <div class="card" id="histList"></div>
   </section>
 
+  <!-- CONFIGURAÇÕES -->
+  <section class="view" id="v-config">
+    <form class="card" id="fCfg" onsubmit="return saveCfg(event)">
+      <h2>Dados da empresa</h2>
+      <p class="muted" style="margin:0">Aparecem nos recibos e checklists novos. Documentos já emitidos mantêm os dados da época.</p>
+      <label>CNPJ</label><input name="cnpj" inputmode="numeric" maxlength="18" data-mask="cnpj" placeholder="00.000.000/0000-00">
+      <label>Telefone</label><input name="tel" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000">
+      <label>Endereço</label><input name="addr" maxlength="200" placeholder="Rua, número, bairro, cidade">
+      <button class="btn" type="submit">Salvar dados</button>
+      <p class="muted" id="cfgMsg" style="margin:8px 0 0"></p>
+    </form>
+    <div class="card">
+      <h2>Tipos de serviço</h2>
+      <div id="svcList"></div>
+      <form class="svc" onsubmit="return svcAdd(event)" style="margin-top:12px">
+        <input id="svcNew" maxlength="120" placeholder="Novo tipo de serviço">
+        <button class="ok" type="submit">Adicionar</button>
+      </form>
+    </div>
+  </section>
+
   <!-- CLIENTES -->
   <section class="view" id="v-clientes">
     <input id="buscaCli" type="search" placeholder="Buscar por nome, telefone ou CPF/CNPJ" oninput="renderClientes()">
@@ -298,7 +331,10 @@ nav.bar button{font-size:11px}
 <script src="lib/firebase-auth-compat.js"></script>
 <script src="lib/firebase-firestore-compat.js"></script>
 <script>
-const CO={nome:'TOP Guincho',tel:'(92) 99174-4383',cnpj:'22.678.354/0001-22',cidade:'Manaus',signer:'Rodrigo Aguiar'};
+const CO={nome:'TOP Guincho',tel:'(92) 99174-4383',cnpj:'22.678.354/0001-22',addr:'',cidade:'Manaus',signer:'Rodrigo Aguiar'};
+const SERVICES0=['Reboque / Guincho plataforma','Socorro mecânico','Troca de pneu','Carga de bateria','Remoção de veículo','Transporte de veículo'];
+let services=[...SERVICES0];
+const coSnap=()=>({tel:CO.tel,cnpj:CO.cnpj,addr:CO.addr});
 const REG={frente:'Frente',traseira:'Traseira',lat_dir:'Lateral direita',lat_esq:'Lateral esquerda',teto:'Teto / capô',interior:'Interior / painel'};
 const TIPOS={arranhado:'Arranhado',amassado:'Amassado',piques:'Piques',trincado:'Trincado',quebrado:'Quebrado',falta:'Falta'};
 const ACS={estepe:'Estepe',macaco:'Macaco',chave_roda:'Chave de roda',triangulo:'Triângulo',extintor:'Extintor',manual:'Manual',chave_reserva:'Chave reserva',tapetes:'Tapetes',radio:'Rádio / multimídia',antena:'Antena',calotas:'Calotas',farol_aux:'Farol auxiliar',alarme:'Alarme',retrovisor:'Retrovisor interno',placa:'Placa veicular',forro_porta:'Forro de porta',banco_diant:'Banco dianteiro',banco_tras:'Banco traseiro',protetor_carter:'Protetor de cárter',cartao_gps:'Cartão / GPS'};
@@ -324,7 +360,7 @@ function startData(u){
     if(!sn.metadata.fromCache)$('#syncTxt').textContent='Sincronizado com a nuvem.';
     else{$('#syncTxt').textContent='Conectando à nuvem…';wait=setTimeout(()=>{$('#syncTxt').textContent='Sem conexão com a nuvem: os dados ficam salvos no aparelho e sincronizam quando a internet voltar.'},12000)}
     refresh()},e=>{clearTimeout(wait);$('#syncTxt').textContent=e.code==='permission-denied'?'Sem permissão: este e-mail não está liberado nas regras do Firebase.':'Erro ao acessar os dados: '+(e.code||e.message)});
-  unsubs=[L('recibos',a=>recibos=a),L('checklists',a=>checks=a),L('clientes',a=>clientes=a)];
+  unsubs=[L('recibos',a=>recibos=a),L('checklists',a=>checks=a),L('clientes',a=>clientes=a),fs.collection('config').doc('empresa').onSnapshot(d=>{if(d&&d.exists)applyCfg(d.data())},()=>{})];
 }
 function stopData(){unsubs.forEach(f=>f());unsubs=[];recibos=[];checks=[];clientes=[];refresh()}
 function refresh(){if(cur==='home')renderHome();if(cur==='hist')renderHist();if(cur==='clientes')renderClientes()}
@@ -356,10 +392,12 @@ const num6=n=>String(n).padStart(6,'0');
 
 /* ---------- máscaras ---------- */
 const MASK={
+  cnpj:d=>{d=d.slice(0,14);return d.replace(/^(\d{2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2}).*/,(m,a,b,c,e,g)=>a+(b?'.'+b:'')+(c?'.'+c:'')+(e?'/'+e:'')+(g?'-'+g:''))},
+  money:d=>{d=d.replace(/^0+/,'');if(!d)return'';d=d.padStart(3,'0');return d.slice(0,-2).replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+d.slice(-2)},
   phone:d=>{d=d.slice(0,11);return d.length>10?d.replace(/^(\d{2})(\d{5})(\d{0,4}).*/,'($1) $2-$3'):d.length>6?d.replace(/^(\d{2})(\d{4})(\d{0,4}).*/,'($1) $2-$3'):d.length>2?d.replace(/^(\d{2})(\d*)/,'($1) $2'):d.length?'('+d:''},
   doc:d=>{d=d.slice(0,14);return d.length<=11?d.replace(/^(\d{3})(\d{0,3})(\d{0,3})(\d{0,2}).*/,(m,a,b,c,e)=>a+(b?'.'+b:'')+(c?'.'+c:'')+(e?'-'+e:'')):d.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})(\d{0,2}).*/,(m,a,b,c,e,g)=>a+'.'+b+'.'+c+(e?'/'+e:'')+(g?'-'+g:''))}
 };
-document.addEventListener('input',e=>{const t=e.target,m=t.dataset&&t.dataset.mask;if(m)t.value=MASK[m](t.value.replace(/\D/g,''))});
+document.addEventListener('input',e=>{const t=e.target,m=t.dataset&&t.dataset.mask;if(m)t.value=MASK[m](t.value.replace(/\D/g,''));if(t.dataset&&t.dataset.calc)calc()});
 
 /* ---------- navegação ---------- */
 let cur='home', prev='home', curDoc=null;
@@ -370,6 +408,7 @@ function go(v){
   $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='cliform'?'clientes':v)));
   window.scrollTo(0,0);
   if(v==='home')renderHome(); if(v==='hist')renderHist(); if(v==='clientes')renderClientes();
+  if(v==='config'){const f=$('#fCfg');f.cnpj.value=CO.cnpj;f.tel.value=CO.tel;f.addr.value=CO.addr||'';$('#cfgMsg').textContent='';renderCfg()}
   if(v==='recibo')initRecibo(); if(v==='check')initCheck();
 }
 function back(){go(prev==='doc'?'home':prev)}
@@ -417,22 +456,23 @@ async function saveReceipt(e){
     stype:f.stype.value.trim(),sdate:f.sdate.value,desc:f.desc.value.trim(),vtype:f.vtype.value.trim(),vmodel:f.vmodel.value.trim(),plate:f.plate.value.trim().toUpperCase(),
     orig:f.orig.value.trim(),dest:f.dest.value.trim(),value:cents(f.value.value),disc:cents(f.disc.value),final:fin,recv,method:recv>0?f.method.value:'',notes:f.notes.value.trim(),cancelado:false};
   if(f.saveCli.checked)upsertCli({nome:r.client,doc:r.doc,phone:r.phone,addr:r.addr});
-  recibos.push(r);put('recibos',r);f.reset();f.saveCli.checked=true;btn.disabled=false;openDoc('r',id);return false;
+  r.co=coSnap();recibos.push(r);put('recibos',r);f.reset();f.saveCli.checked=true;btn.disabled=false;openDoc('r',id);return false;
 }
 function receiptDoc(r){
+  const C=r.co||CO;
   const F=(l,v,w)=>`<div class="f ${w||''}"><small>${l}</small>${esc(v)||'—'}</div>`;
   const st=r.cancelado?'Cancelado':r.recv>=r.final?'Recebido':r.recv>0?'Parcialmente recebido':'Pendente';
-  return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${CO.tel}<br>CNPJ: ${CO.cnpj}</div></div>
+  return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>RECIBO Nº ${num6(r.id)}</h2><span>Emitido em ${dBR(r.issue)}</span></div>
   <h3>Cliente</h3><div class="g">${F('Nome',r.client,'w')}${F('CPF / CNPJ',r.doc)}${F('Telefone',r.phone)}${F('Endereço',r.addr,'w')}</div>
   <h3>Serviço e veículo</h3><div class="g">${F('Serviço',r.stype)}${F('Data',dBR(r.sdate))}${F('Veículo',r.vtype)}${F('Marca / modelo',r.vmodel)}${F('Placa',r.plate)}<div></div>${F('Origem',r.orig)}${F('Destino',r.dest)}${F('Descrição',r.desc,'w')}</div>
   <h3>Valores</h3><table><tr><td>Valor do serviço</td><td>${money(r.value)}</td></tr><tr><td>Desconto</td><td>− ${money(r.disc)}</td></tr>
   <tr class="hl"><td>Valor final</td><td>${money(r.final)}</td></tr><tr><td>Valor recebido</td><td>${money(r.recv)}</td></tr><tr class="hl"><td>Saldo pendente</td><td>${money(r.final-r.recv)}</td></tr></table>
   <p style="margin:6px 0 0">Situação: <b>${st}</b> · Pagamento: <b>${esc(r.method)||'—'}</b></p>
-  <h3>Declaração</h3><p style="margin:0">Declaro que ${CO.nome}, CNPJ ${CO.cnpj}, prestou o serviço de <b>${esc(r.stype)}</b> a <b>${esc(r.client)}</b>, no valor de <b>${money(r.final)}</b>${r.recv>0?`, tendo recebido <b>${money(r.recv)}</b>`:''}.</p>
+  <h3>Declaração</h3><p style="margin:0">Declaro que ${CO.nome}, CNPJ ${C.cnpj}, prestou o serviço de <b>${esc(r.stype)}</b> a <b>${esc(r.client)}</b>, no valor de <b>${money(r.final)}</b>${r.recv>0?`, tendo recebido <b>${money(r.recv)}</b>`:''}.</p>
   ${r.notes?`<p><b>Observações:</b> ${esc(r.notes)}</p>`:''}
   <div class="sign"><div>${CO.cidade}, ${dBR(r.issue)}</div><img src="signature.png" alt=""><div class="ln"></div><b>${CO.signer}</b><br><small>${CO.nome} · Assinatura do responsável</small></div>
-  <div class="foot">${CO.nome} · ${CO.tel} · CNPJ ${CO.cnpj}</div>`;
+  <div class="foot">${CO.nome} · ${C.tel} · CNPJ ${C.cnpj}${C.addr?' · '+esc(C.addr):''}</div>`;
 }
 
 /* ---------- checklist ---------- */
@@ -474,14 +514,15 @@ async function saveChecklist(e){
   const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
     pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),av,ac,obs:f.obs.value.trim(),
     entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
-  checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
+  c.co=coSnap();checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
 }
 function checkDoc(c){
+  const C=c.co||CO;
   const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
   const F=(l,v)=>`<div class="f"><small>${l}</small>${esc(v)||'—'}</div>`;
   const avs=Object.entries(REG).map(([k,n])=>{const a=c.av[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('');
   const acs=Object.entries(ACS).filter(([k])=>c.ac[k]).map(([k,n])=>`<tr><td>${n}</td><td style="text-align:left">${{S:'Sim',N:'Não existe',A:'Avariado'}[c.ac[k]]}</td></tr>`).join('');
-  return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${CO.tel}<br>CNPJ: ${CO.cnpj}</div></div>
+  return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
   <h3>Veículo</h3><div class="g">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}</div>
   <h3>Pneus, documento e limpeza</h3><div class="g">${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
@@ -490,7 +531,7 @@ function checkDoc(c){
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
   <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
   <div><img src="${c.sigMot||'signature.png'}" alt=""><div style="border-top:1px solid #111"></div>Motorista<br>${esc(c.motNome)}</div></div>
-  <div class="foot">${CO.nome} · ${CO.tel} · CNPJ ${CO.cnpj}</div>`;
+  <div class="foot">${CO.nome} · ${C.tel} · CNPJ ${C.cnpj}${C.addr?' · '+esc(C.addr):''}</div>`;
 }
 
 /* ---------- documento ---------- */
@@ -539,6 +580,39 @@ function delDoc(){
   if(curDoc.t==='r'){recibos=recibos.filter(x=>x.id!==curDoc.id);del('recibos',curDoc.id)}else{checks=checks.filter(x=>x.id!==curDoc.id);del('checklists',curDoc.id)}
   go('hist');
 }
+
+/* ---------- configurações (empresa e tipos de serviço) ---------- */
+function applyCfg(c){
+  if(c.cnpj)CO.cnpj=c.cnpj;if(c.tel)CO.tel=c.tel;CO.addr=c.addr||'';
+  if(Array.isArray(c.services))services=c.services;
+  renderCfg();
+}
+function renderCfg(){
+  const info=$('#coInfo');if(info)info.innerHTML='Tel.: '+esc(CO.tel)+'<br>CNPJ: '+esc(CO.cnpj)+(CO.addr?'<br>'+esc(CO.addr):'');
+  const chips=$('#svcChips');if(chips)chips.innerHTML=services.map((n,i)=>`<button type="button" onclick="pickSvc(${i})">${esc(n)}</button>`).join('');
+  const f=$('#fCfg');if(f&&cur!=='config'){f.cnpj.value=CO.cnpj;f.tel.value=CO.tel;f.addr.value=CO.addr||''}
+  const l=$('#svcList');if(l&&!l.contains(document.activeElement))l.innerHTML=services.length?services.map((n,i)=>`<div class="svc"><input value="${esc(n)}" maxlength="120" id="svc${i}"><button class="ok" type="button" onclick="svcSave(${i})">Salvar</button><button class="del" type="button" onclick="svcDel(${i})">Excluir</button></div>`).join(''):'<p class="muted">Nenhum tipo cadastrado.</p>';
+}
+function pickSvc(i){$('#fR').stype.value=services[i]}
+function saveCfgDoc(){fs.collection('config').doc('empresa').set({cnpj:CO.cnpj,tel:CO.tel,addr:CO.addr||'',services},{merge:true}).catch(e=>alert('Falha ao salvar: '+(e.message||e)))}
+function saveCfg(e){
+  e.preventDefault();const f=e.target;
+  if(dg(f.cnpj.value).length!==14){$('#cfgMsg').textContent='CNPJ incompleto.';return false}
+  if(dg(f.tel.value).length<10){$('#cfgMsg').textContent='Telefone incompleto.';return false}
+  CO.cnpj=f.cnpj.value.trim();CO.tel=f.tel.value.trim();CO.addr=f.addr.value.trim();
+  saveCfgDoc();$('#cfgMsg').textContent='Dados salvos.';renderCfg();return false;
+}
+function svcAdd(e){
+  e.preventDefault();const i=$('#svcNew'),v=i.value.trim();if(!v)return false;
+  if(services.some(x=>x.toLowerCase()===v.toLowerCase())){alert('Esse tipo de serviço já existe.');return false}
+  services.push(v);i.value='';saveCfgDoc();renderCfg();return false;
+}
+function svcSave(i){
+  const v=$('#svc'+i).value.trim();if(!v)return alert('O nome não pode ficar vazio.');
+  if(services.some((x,j)=>j!==i&&x.toLowerCase()===v.toLowerCase()))return alert('Esse tipo de serviço já existe.');
+  services[i]=v;saveCfgDoc();renderCfg();
+}
+function svcDel(i){if(!confirm('Excluir o tipo "'+services[i]+'"? Recibos já emitidos não são alterados.'))return;services.splice(i,1);saveCfgDoc();renderCfg()}
 
 /* ---------- clientes ---------- */
 const dg=v=>String(v||'').replace(/\D/g,'');
@@ -598,6 +672,7 @@ window.onUpdateError=()=>{updReset('Tentar de novo');$('#updBar').style.width='0
 function doUpdate(){if(A){setUpdBusy('Iniciando…');A.startUpdate()}}
 function manualCheck(){$('#chkMsg').textContent=' Procurando…';if(A)A.checkUpdate();setTimeout(()=>{if(!$('#upd').classList.contains('show'))$('#chkMsg').textContent=' Você está na versão mais recente.'},4000)}
 
+renderCfg();
 go('home');
 initFirebase();
 </script>
