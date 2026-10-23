@@ -138,6 +138,22 @@ check(cfg.antigo, 'recibo antigo mantém o CNPJ da época da emissão');
 check(cfg.novo, 'recibo novo usa CNPJ, telefone e endereço atualizados');
 check(/11\.222\.333\/0001-81/.test(cfg.home), 'tela inicial mostra os dados atualizados');
 
+// clique real em Excluir / Adicionar: a lista precisa atualizar na hora (sem sair do botão)
+page.on('dialog', d => d.accept());
+page.setDefaultTimeout(5000);
+await page.evaluate(() => { document.querySelector('#login').style.display = 'none'; go('config'); });
+const antes = await page.locator('#svcList .svc').count();
+await page.locator('#svcList .del').first().click();
+const depoisDel = await page.locator('#svcList .svc').count();
+check(depoisDel === antes - 1, `excluir tipo de serviço atualiza a lista na hora (${antes} -> ${depoisDel})`);
+await page.fill('#svcNew', 'Serviço novo de teste');
+await page.locator('#svcNew + button').click();
+const depoisAdd = await page.locator('#svcList .svc').count();
+check(depoisAdd === depoisDel + 1, `adicionar tipo de serviço atualiza a lista na hora (${depoisDel} -> ${depoisAdd})`);
+await page.locator('#svcList .svc input').last().fill('Serviço renomeado');
+await page.locator('#svcList .svc .ok').last().click();
+check(await page.locator('#svcList .svc input').last().inputValue() === 'Serviço renomeado', 'editar tipo de serviço mantém o novo nome na lista');
+
 await browser.close();
 server.close();
 if (fails.length) { console.error('\n' + fails.length + ' verificação(ões) falharam'); process.exit(1); }

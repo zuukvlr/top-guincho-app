@@ -587,11 +587,11 @@ function applyCfg(c){
   if(Array.isArray(c.services))services=c.services;
   renderCfg();
 }
-function renderCfg(){
+function renderCfg(force){
   const info=$('#coInfo');if(info)info.innerHTML='Tel.: '+esc(CO.tel)+'<br>CNPJ: '+esc(CO.cnpj)+(CO.addr?'<br>'+esc(CO.addr):'');
   const chips=$('#svcChips');if(chips)chips.innerHTML=services.map((n,i)=>`<button type="button" onclick="pickSvc(${i})">${esc(n)}</button>`).join('');
   const f=$('#fCfg');if(f&&cur!=='config'){f.cnpj.value=CO.cnpj;f.tel.value=CO.tel;f.addr.value=CO.addr||''}
-  const l=$('#svcList');if(l&&!l.contains(document.activeElement))l.innerHTML=services.length?services.map((n,i)=>`<div class="svc"><input value="${esc(n)}" maxlength="120" id="svc${i}"><button class="ok" type="button" onclick="svcSave(${i})">Salvar</button><button class="del" type="button" onclick="svcDel(${i})">Excluir</button></div>`).join(''):'<p class="muted">Nenhum tipo cadastrado.</p>';
+  const l=$('#svcList');if(l&&(force||!l.contains(document.activeElement)))l.innerHTML=services.length?services.map((n,i)=>`<div class="svc"><input value="${esc(n)}" maxlength="120" id="svc${i}"><button class="ok" type="button" onclick="svcSave(${i})">Salvar</button><button class="del" type="button" onclick="svcDel(${i})">Excluir</button></div>`).join(''):'<p class="muted">Nenhum tipo cadastrado.</p>';
 }
 function pickSvc(i){$('#fR').stype.value=services[i]}
 function saveCfgDoc(){fs.collection('config').doc('empresa').set({cnpj:CO.cnpj,tel:CO.tel,addr:CO.addr||'',services},{merge:true}).catch(e=>alert('Falha ao salvar: '+(e.message||e)))}
@@ -605,14 +605,14 @@ function saveCfg(e){
 function svcAdd(e){
   e.preventDefault();const i=$('#svcNew'),v=i.value.trim();if(!v)return false;
   if(services.some(x=>x.toLowerCase()===v.toLowerCase())){alert('Esse tipo de serviço já existe.');return false}
-  services.push(v);i.value='';saveCfgDoc();renderCfg();return false;
+  services.push(v);i.value='';saveCfgDoc();renderCfg(true);return false;
 }
 function svcSave(i){
   const v=$('#svc'+i).value.trim();if(!v)return alert('O nome não pode ficar vazio.');
   if(services.some((x,j)=>j!==i&&x.toLowerCase()===v.toLowerCase()))return alert('Esse tipo de serviço já existe.');
-  services[i]=v;saveCfgDoc();renderCfg();
+  services[i]=v;saveCfgDoc();renderCfg(true);
 }
-function svcDel(i){if(!confirm('Excluir o tipo "'+services[i]+'"? Recibos já emitidos não são alterados.'))return;services.splice(i,1);saveCfgDoc();renderCfg()}
+function svcDel(i){if(!confirm('Excluir o tipo "'+services[i]+'"? Recibos já emitidos não são alterados.'))return;services.splice(i,1);saveCfgDoc();renderCfg(true)}
 
 /* ---------- clientes ---------- */
 const dg=v=>String(v||'').replace(/\D/g,'');
