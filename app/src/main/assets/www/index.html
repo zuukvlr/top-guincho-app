@@ -276,8 +276,8 @@ nav.bar button{font-size:11px}
   <section class="view" id="v-doc">
     <div class="noprint" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
       <button class="btn sm ghost" onclick="back()">← Voltar</button>
-      <button class="btn sm" onclick="printDoc()">PDF / Imprimir</button>
-      <button class="btn sm" id="btnWa" onclick="shareWa()">Enviar PDF (WhatsApp)</button>
+      <button class="btn sm" onclick="sharePdf(false)">Compartilhar PDF</button>
+      <button class="btn sm" id="btnWa" onclick="sharePdf(true)">WhatsApp (PDF)</button>
       <button class="btn sm ghost" onclick="delDoc()">Excluir</button>
     </div>
     <div class="doc" id="doc"></div>
@@ -292,6 +292,8 @@ nav.bar button{font-size:11px}
   <button data-v="hist" onclick="go('hist')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Histórico</button>
 </nav>
 
+<script src="lib/html2canvas.min.js"></script>
+<script src="lib/jspdf.umd.min.js"></script>
 <script src="lib/firebase-app-compat.js"></script>
 <script src="lib/firebase-auth-compat.js"></script>
 <script src="lib/firebase-firestore-compat.js"></script>
@@ -495,12 +497,37 @@ function openDoc(t,id){
   $$('.view').forEach(e=>e.classList.remove('on','print'));$('#v-doc').classList.add('on','print');
   $$('#nav button').forEach(b=>b.classList.remove('on'));window.scrollTo(0,0);
 }
-function printDoc(){const n=(curDoc.t==='r'?'Recibo-':'Checklist-')+num6(curDoc.id);if(A)A.print(n);else window.print()}
-function shareWa(){
+/* PDF do documento: renderiza o #doc em largura fixa e ajusta em uma página A4 (se for longo demais, divide em páginas) */
+async function docToPdf(){
+  const holder=document.createElement('div');
+  holder.style.cssText='position:fixed;left:-10000px;top:0;width:760px;background:#fff';
+  const clone=$('#doc').cloneNode(true);clone.style.cssText='width:760px;border-radius:0;padding:26px;background:#fff';
+  holder.appendChild(clone);document.body.appendChild(holder);
+  await Promise.all([...clone.querySelectorAll('img')].map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));
+  let canvas;try{canvas=await html2canvas(clone,{scale:2,backgroundColor:'#fff'})}finally{holder.remove()}
+  const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),W=210,H=297,imgH=canvas.height*W/canvas.width;
+  if(imgH<=H*1.25){ // uma página: reduz para caber, centralizado
+    const k=Math.min(1,H/imgH),w=W*k,hh=imgH*k;
+    pdf.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',(W-w)/2,0,w,hh);
+  }else{
+    const ph=Math.floor(canvas.width*H/W);
+    for(let y=0,n=0;y<canvas.height;y+=ph,n++){
+      const t=document.createElement('canvas');t.width=canvas.width;t.height=Math.min(ph,canvas.height-y);
+      const x=t.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,t.width,t.height);x.drawImage(canvas,0,-y);
+      if(n)pdf.addPage();pdf.addImage(t.toDataURL('image/jpeg',.92),'JPEG',0,0,W,t.height*W/t.width);
+    }
+  }
+  return pdf.output('datauristring').split(',')[1];
+}
+async function sharePdf(whats){
   const o=curDoc.o,isR=curDoc.t==='r',name=(isR?'Recibo-':'Checklist-')+num6(o.id);
   const txt=isR?`Olá, ${o.client}! Segue o recibo ${num6(o.id)} da ${CO.nome} no valor de ${money(o.final)}. Obrigado!`:`Olá! Segue o checklist ${num6(o.id)} do veículo ${o.modelo} - ${CO.nome}.`;
-  const phone=(isR?o.phone:o.entTel)||'';
-  if(A&&A.sharePdf)A.sharePdf(name,phone,txt);else if(A)A.openWhatsApp(phone,txt);else window.open('https://wa.me/?text='+encodeURIComponent(txt))
+  const phone=whats?((isR?o.phone:o.entTel)||''):'';
+  try{
+    const b64=await docToPdf();
+    if(A&&A.sharePdfData)A.sharePdfData(name,phone,txt,b64,!!whats);
+    else{const l=document.createElement('a');l.href='data:application/pdf;base64,'+b64;l.download=name+'.pdf';l.click()}
+  }catch(e){alert('Não foi possível gerar o PDF: '+(e.message||e))}
 }
 function delDoc(){
   if(!confirm('Excluir este registro? Isso não pode ser desfeito.'))return;
