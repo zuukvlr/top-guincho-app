@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="top_red">#FFE10600</color>
+    <color name="top_black">#FF0A0A0A</color>
+    <color name="top_white">#FFFFFFFF</color>
+</resources>

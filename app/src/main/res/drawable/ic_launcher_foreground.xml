@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- escudo vermelho -->
+    <path android:fillColor="#E10600"
+        android:pathData="M54,24 L78,31 L78,56 Q78,74 54,86 Q30,74 30,56 L30,31 Z" />
+    <path android:fillColor="#0A0A0A"
+        android:pathData="M54,29 L73,34.5 L73,55 Q73,70 54,80.5 Q35,70 35,55 L35,34.5 Z" />
+    <!-- faixa branca (como no logo) -->
+    <path android:fillColor="#FFFFFF" android:pathData="M30,50 h48 v2.2 h-48z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M30,63 h48 v2.2 h-48z" />
+    <!-- T de TOP -->
+    <path android:fillColor="#E10600" android:pathData="M40,36 h28 v6 h-11 v9 h-6 v-9 h-11z" />
+    <!-- G de Guincho -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M54,54 q-7,0 -7,4.6 q0,4.6 7,4.6 q4,0 6,-2 v-3 h-6 v2.4 h3 q-1,1.2 -3,1.2 q-4,0 -4,-3.2 q0,-3.2 4,-3.2 q2,0 3,1.1 l1.8,-1.8 q-1.8,-1.7 -4.8,-1.7z" />
+</vector>

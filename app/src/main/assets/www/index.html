@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>TOP Guincho</title>
+<style>
+:root{--red:#e10600;--red-d:#b30500;--black:#0a0a0a;--ink:#161616;--card:#1b1b1b;--line:#2c2c2c;--white:#fff;--mut:#a8a8a8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--black);color:var(--white);font:16px/1.4 system-ui,Roboto,Arial,sans-serif}
+body{padding-bottom:76px}
+header.top{position:sticky;top:0;z-index:5;background:var(--black);border-bottom:3px solid var(--red);padding:10px 14px;display:flex;align-items:center;gap:10px}
+header.top h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.3px}
+header.top h1 b{color:var(--red)}
+header.top small{display:block;color:var(--mut);font-weight:400;font-size:11px}
+.logo{width:42px;height:42px;flex:none}
+main{padding:14px;max-width:720px;margin:0 auto}
+nav.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:#000;border-top:2px solid var(--red)}
+nav.bar button{flex:1;background:none;border:0;color:var(--mut);padding:10px 2px 12px;font:600 12px system-ui;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav.bar button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav.bar button.on{color:var(--white)}
+nav.bar button.on svg{stroke:var(--red)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:.6px;color:var(--red)}
+label{display:block;font-size:12px;color:var(--mut);margin:10px 0 4px;font-weight:600}
+input,select,textarea{width:100%;background:#111;color:var(--white);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;font:16px system-ui}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font:700 16px system-ui;background:var(--red);color:#fff;margin-top:12px}
+.btn:active{background:var(--red-d)}
+.btn.ghost{background:transparent;border:1.5px solid var(--line);color:#fff}
+.btn.sm{display:inline-block;width:auto;padding:9px 14px;font-size:14px;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0}
+.chip span{display:block;padding:9px 13px;border:1.5px solid var(--line);border-radius:999px;background:#111;font-size:14px;font-weight:600}
+.chip input:checked+span{background:var(--red);border-color:var(--red)}
+.chip.xs span{padding:6px 12px;min-width:38px;text-align:center}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{background:var(--red);border:0;border-radius:16px;color:#fff;padding:18px 12px;font:800 16px system-ui;text-align:left;min-height:110px;display:flex;flex-direction:column;justify-content:space-between}
+.tile.k{background:var(--card);border:2px solid var(--red)}
+.tile svg{width:30px;height:30px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}
+.item .t{flex:1;min-width:0}
+.item b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item small{color:var(--mut)}
+.tag{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:#333}
+.tag.ok{background:#14532d}.tag.pend{background:#7f1d1d}.tag.par{background:#78350f}
+.muted{color:var(--mut);font-size:13px}
+.reg{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;background:#141414}
+.reg .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ac{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);gap:8px}
+.ac:last-child{border:0}
+.pad{position:relative;background:#fff;border-radius:10px;margin-top:4px}
+.pad canvas{width:100%;height:140px;display:block;touch-action:none}
+.pad button{position:absolute;right:6px;top:6px;border:0;background:#ddd;color:#000;border-radius:8px;padding:4px 10px;font-size:12px}
+.upd{position:sticky;top:61px;z-index:4;background:var(--red);padding:12px 14px;display:none;align-items:center;gap:10px}
+.upd.show{display:flex}
+.upd b{flex:1}
+.upd button{border:0;background:#fff;color:#000;font-weight:800;border-radius:10px;padding:10px 14px}
+.upd .bar{position:absolute;left:0;bottom:0;height:4px;background:#fff;width:0}
+.view{display:none}.view.on{display:block}
+#err{background:#7f1d1d;border-radius:10px;padding:10px;margin-top:10px;display:none}
+/* documento (recibo / checklist) — fundo branco para impressão */
+.doc{background:#fff;color:#111;border-radius:6px;padding:16px;font-size:13px}
+.doc .hd{display:flex;gap:12px;align-items:center;border-bottom:4px solid var(--red);padding-bottom:10px}
+.doc .hd svg{width:64px;height:64px;flex:none}
+.doc .hd .co{flex:1;line-height:1.3}
+.doc .hd .co b{font-size:16px}
+.doc h3{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#fff;background:var(--black);padding:4px 8px;border-left:5px solid var(--red)}
+.doc .tt{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px}
+.doc .tt h2{margin:0;font-size:18px;color:var(--red)}
+.doc .g{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.doc .g .w{grid-column:1/-1}
+.doc .f small{display:block;color:#666;font-size:10px;text-transform:uppercase}
+.doc table{width:100%;border-collapse:collapse}
+.doc td,.doc th{padding:5px 6px;border-bottom:1px solid #ddd;text-align:left;font-size:12px}
+.doc td:last-child{text-align:right}
+.doc tr.hl td{font-weight:800;background:#f3f3f3}
+.doc .sign{margin-top:26px;text-align:center}
+.doc .sign img{max-height:60px}
+.doc .sign .ln{border-top:1px solid #111;margin:2px auto 3px;width:70%}
+.doc .sg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;text-align:center;font-size:11px}
+.doc .sg3 img{max-height:50px;max-width:100%}
+.doc .foot{margin-top:14px;border-top:3px solid var(--red);padding-top:6px;text-align:center;font-size:11px;color:#444}
+.doc .av{font-size:12px}
+@media print{
+  body{background:#fff;padding:0}
+  header.top,nav.bar,.upd,.noprint{display:none!important}
+  main{padding:0;max-width:none}
+  .view{display:none!important}.view.print{display:block!important}
+  .doc{border-radius:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .doc h3,.doc .hd,.doc tr.hl td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="logo" viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="14" fill="#0a0a0a"/>
+      <path d="M50 8 L86 19 L86 56 Q86 80 50 94 Q14 80 14 56 L14 19 Z" fill="#e10600"/>
+      <path d="M50 14 L80 23 L80 55 Q80 75 50 88 Q20 75 20 55 L20 23 Z" fill="#0a0a0a"/>
+      <text x="50" y="45" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="25" fill="#e10600" stroke="#fff" stroke-width="1.2">TOP</text>
+      <rect x="8" y="48" width="84" height="1.6" fill="#fff"/><rect x="8" y="68" width="84" height="1.6" fill="#fff"/>
+      <text x="50" y="64" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="15" fill="#fff">Guincho</text>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <svg class="logo"><use href="#logo"/></svg>
+  <h1><b>TOP</b> Guincho<small>Recibo &amp; Checklist</small></h1>
+</header>
+
+<div class="upd" id="upd">
+  <b id="updTxt">Atualização nova disponível</b>
+  <button id="updBtn" onclick="doUpdate()">Atualizar</button>
+  <div class="bar" id="updBar"></div>
+</div>
+
+<main>
+  <!-- INÍCIO -->
+  <section class="view on" id="v-home">
+    <div class="hero">
+      <button class="tile" onclick="go('recibo')"><svg viewBox="0 0 24 24"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6"/></svg>Novo recibo</button>
+      <button class="tile k" onclick="go('check')"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg>Novo checklist</button>
+    </div>
+    <div class="card" style="margin-top:14px"><h2>Resumo</h2>
+      <div class="row"><div><div class="muted">Recibos</div><b style="font-size:26px" id="nR">0</b></div>
+      <div><div class="muted">Checklists</div><b style="font-size:26px" id="nC">0</b></div></div>
+      <div style="margin-top:10px"><div class="muted">A receber (pendente)</div><b style="font-size:22px;color:var(--red)" id="nP">R$ 0,00</b></div>
+    </div>
+    <div class="card"><h2>Últimos registros</h2><div id="recent"></div></div>
+    <div class="card"><h2>Empresa</h2>
+      <b>TOP Guincho</b><br><span class="muted">Tel.: (92) 99174-4383<br>CNPJ: 22.678.354/0001-22</span>
+      <p class="muted" style="margin:10px 0 0">Versão <span id="ver">—</span></p>
+      <button class="btn ghost sm" style="margin-top:8px" onclick="manualCheck()">Procurar atualização</button>
+      <span class="muted" id="chkMsg"></span>
+    </div>
+  </section>
+
+  <!-- RECIBO -->
+  <section class="view" id="v-recibo">
+    <form id="fR" onsubmit="return saveReceipt(event)">
+      <div class="card"><h2>Cliente</h2>
+        <label>Nome completo *</label><input name="client" required maxlength="150">
+        <div class="row"><div><label>CPF / CNPJ</label><input name="doc" inputmode="numeric" maxlength="18"></div>
+        <div><label>Telefone</label><input name="phone" inputmode="tel" maxlength="20" placeholder="(92) 90000-0000"></div></div>
+        <label>Endereço</label><input name="addr" maxlength="255">
+      </div>
+      <div class="card"><h2>Serviço</h2>
+        <label>Tipo de serviço *</label><input name="stype" required maxlength="120" list="svcs" placeholder="Ex.: Reboque / Guincho plataforma">
+        <datalist id="svcs"><option>Reboque / Guincho plataforma</option><option>Socorro mecânico</option><option>Troca de pneu</option><option>Carga de bateria</option><option>Remoção de veículo</option><option>Transporte de veículo</option></datalist>
+        <label>Data do serviço *</label><input type="date" name="sdate" required>
+        <label>Descrição *</label><textarea name="desc" rows="2" required maxlength="2000"></textarea>
+        <div class="row"><div><label>Veículo *</label><input name="vtype" required placeholder="Carro, moto..."></div>
+        <div><label>Marca / modelo *</label><input name="vmodel" required></div></div>
+        <label>Placa</label><input name="plate" maxlength="10" style="text-transform:uppercase">
+        <div class="row"><div><label>Origem *</label><input name="orig" required></div>
+        <div><label>Destino *</label><input name="dest" required></div></div>
+      </div>
+      <div class="card"><h2>Valores</h2>
+        <div class="row"><div><label>Valor (R$) *</label><input name="value" inputmode="decimal" required placeholder="0,00" oninput="calc()"></div>
+        <div><label>Desconto (R$)</label><input name="disc" inputmode="decimal" placeholder="0,00" oninput="calc()"></div></div>
+        <div class="row"><div><label>Situação</label><select name="sit" onchange="calc()"><option value="recebido">Recebido</option><option value="parcial">Parcial</option><option value="pendente">Pendente</option></select></div>
+        <div><label>Forma de pagamento</label><select name="method"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option></select></div></div>
+        <div id="recvBox" style="display:none"><label>Valor recebido (R$)</label><input name="recv" inputmode="decimal" placeholder="0,00" oninput="calc()"></div>
+        <p style="margin:12px 0 0"><b>Final: <span id="fin">R$ 0,00</span></b> · <span class="muted">Saldo: <span id="bal">R$ 0,00</span></span></p>
+        <label>Observações</label><textarea name="notes" rows="2" maxlength="2000"></textarea>
+      </div>
+      <div id="err"></div>
+      <button class="btn" type="submit">Emitir recibo</button>
+    </form>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section class="view" id="v-check">
+    <form id="fC" onsubmit="return saveChecklist(event)">
+      <div class="card"><h2>Veículo</h2>
+        <div class="chips"><label class="chip"><input type="radio" name="tipo" value="usado" checked><span>Usado</span></label><label class="chip"><input type="radio" name="tipo" value="novo"><span>Novo</span></label></div>
+        <div class="row"><div><label>Placa</label><input name="placa" maxlength="10" style="text-transform:uppercase"></div><div><label>KM</label><input name="km" inputmode="numeric" maxlength="12"></div></div>
+        <label>Modelo *</label><input name="modelo" required maxlength="80" placeholder="Ex.: Fiat Palio 2014 preto">
+        <div class="row"><div><label>Data *</label><input type="date" name="data" required></div><div><label>Hora</label><input type="time" name="hora"></div></div>
+        <label>UF / Cidade</label><input name="uf" value="AM / Manaus" maxlength="40">
+      </div>
+      <div class="card"><h2>Pneus</h2>
+        <div class="row" style="grid-template-columns:repeat(3,1fr)" id="pneus"></div>
+      </div>
+      <div class="card"><h2>Documento, combustível, limpeza</h2>
+        <label>CRLV está no veículo?</label>
+        <div class="chips"><label class="chip"><input type="radio" name="crlv" value="sim"><span>Sim</span></label><label class="chip"><input type="radio" name="crlv" value="nao"><span>Não</span></label></div>
+        <label>Combustível</label>
+        <div class="chips" id="comb"></div>
+        <label>Entregue excessivamente sujo?</label>
+        <div class="chips"><label class="chip"><input type="radio" name="sujo" value="sim"><span>Sim</span></label><label class="chip"><input type="radio" name="sujo" value="nao"><span>Não</span></label></div>
+      </div>
+      <div class="card"><h2>Avarias por região</h2><div id="regs"></div></div>
+      <div class="card"><h2>Acessórios</h2><p class="muted" style="margin:0 0 6px">S = existe · N = não existe · A = avariado</p><div id="acs"></div></div>
+      <div class="card"><h2>Observações</h2><input name="obs" maxlength="400" placeholder="Opcional"></div>
+      <div class="card"><h2>Assinaturas</h2>
+        <label>Cliente — nome</label><input name="entNome" maxlength="80">
+        <label>Cliente — telefone</label><input name="entTel" inputmode="tel" maxlength="20">
+        <label>Assinatura do cliente</label><div class="pad"><canvas id="p_ent"></canvas><button type="button" onclick="clearPad('ent')">Limpar</button></div>
+        <label>Motorista — nome</label><input name="motNome" maxlength="80">
+        <label>Assinatura do motorista</label><div class="pad"><canvas id="p_mot"></canvas><button type="button" onclick="clearPad('mot')">Limpar</button></div>
+      </div>
+      <div id="errC" style="background:#7f1d1d;border-radius:10px;padding:10px;display:none;margin-bottom:8px"></div>
+      <button class="btn" type="submit">Gerar checklist</button>
+    </form>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section class="view" id="v-hist">
+    <input id="busca" type="search" placeholder="Buscar por nome, placa ou número" oninput="renderHist()">
+    <div class="chips" style="margin:10px 0">
+      <label class="chip"><input type="radio" name="hf" value="all" checked onchange="renderHist()"><span>Tudo</span></label>
+      <label class="chip"><input type="radio" name="hf" value="r" onchange="renderHist()"><span>Recibos</span></label>
+      <label class="chip"><input type="radio" name="hf" value="c" onchange="renderHist()"><span>Checklists</span></label>
+    </div>
+    <div class="card" id="histList"></div>
+  </section>
+
+  <!-- DOCUMENTO -->
+  <section class="view" id="v-doc">
+    <div class="noprint" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn sm ghost" onclick="back()">← Voltar</button>
+      <button class="btn sm" onclick="printDoc()">PDF / Imprimir</button>
+      <button class="btn sm" id="btnWa" onclick="shareWa()">WhatsApp</button>
+      <button class="btn sm ghost" onclick="delDoc()">Excluir</button>
+    </div>
+    <div class="doc" id="doc"></div>
+  </section>
+</main>
+
+<nav class="bar" id="nav">
+  <button data-v="home" class="on" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10H3z"/></svg>Início</button>
+  <button data-v="recibo" onclick="go('recibo')"><svg viewBox="0 0 24 24"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Recibo</button>
+  <button data-v="check" onclick="go('check')"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg>Checklist</button>
+  <button data-v="hist" onclick="go('hist')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Histórico</button>
+</nav>
+
+<script>
+const CO={nome:'TOP Guincho',tel:'(92) 99174-4383',cnpj:'22.678.354/0001-22',cidade:'Manaus'};
+const REG={frente:'Frente',traseira:'Traseira',lat_dir:'Lateral direita',lat_esq:'Lateral esquerda',teto:'Teto / capô',interior:'Interior / painel'};
+const TIPOS={arranhado:'Arranhado',amassado:'Amassado',piques:'Piques',trincado:'Trincado',quebrado:'Quebrado',falta:'Falta'};
+const ACS={estepe:'Estepe',macaco:'Macaco',chave_roda:'Chave de roda',triangulo:'Triângulo',extintor:'Extintor',manual:'Manual',chave_reserva:'Chave reserva',tapetes:'Tapetes',radio:'Rádio / multimídia',antena:'Antena',calotas:'Calotas',farol_aux:'Farol auxiliar',alarme:'Alarme',retrovisor:'Retrovisor interno',placa:'Placa veicular',forro_porta:'Forro de porta',banco_diant:'Banco dianteiro',banco_tras:'Banco traseiro',protetor_carter:'Protetor de cárter',cartao_gps:'Cartão / GPS'};
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const A=window.Android;
+
+/* ---------- armazenamento ---------- */
+const DB={
+  get(k,d){try{return JSON.parse(localStorage.getItem('tg_'+k))??d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('tg_'+k,JSON.stringify(v))}catch(e){alert('Sem espaço para salvar.')}}
+};
+let recibos=DB.get('recibos',[]), checks=DB.get('checks',[]);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const cents=v=>{v=String(v||'').trim();if(!v)return 0;v=v.replace(/\./g,'').replace(',','.');const n=Math.round(parseFloat(v)*100);return isNaN(n)?0:n};
+const money=c=>'R$ '+(c<0?'-':'')+Math.floor(Math.abs(c)/100).toLocaleString('pt-BR')+','+String(Math.abs(c)%100).padStart(2,'0');
+const dBR=d=>d?d.split('-').reverse().join('/'):'—';
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const num6=n=>String(n).padStart(6,'0');
+
+/* ---------- navegação ---------- */
+let cur='home', prev='home', curDoc=null;
+function go(v){
+  prev=cur; cur=v;
+  $$('.view').forEach(e=>e.classList.remove('on','print'));
+  $('#v-'+v).classList.add('on');
+  $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  window.scrollTo(0,0);
+  if(v==='home')renderHome(); if(v==='hist')renderHist();
+  if(v==='recibo')initRecibo(); if(v==='check')initCheck();
+}
+function back(){go(prev==='doc'?'home':prev)}
+window.onBack=()=>{if(cur!=='home'){cur==='doc'?back():go('home');return true}return false};
+
+/* ---------- logo (usa logo.png se existir) ---------- */
+function logoHTML(){return '<svg viewBox="0 0 100 100"><use href="#logo"/></svg>'}
+
+/* ---------- início / histórico ---------- */
+function renderHome(){
+  $('#nR').textContent=recibos.length; $('#nC').textContent=checks.length;
+  $('#nP').textContent=money(recibos.reduce((s,r)=>s+(r.cancelado?0:r.final-r.recv),0));
+  $('#ver').textContent=A?A.version():'dev';
+  const all=[...recibos.map(r=>({t:'r',x:r})),...checks.map(c=>({t:'c',x:c}))].sort((a,b)=>b.x.ts-a.x.ts).slice(0,5);
+  $('#recent').innerHTML=all.length?all.map(rowHTML).join(''):'<p class="muted">Nenhum registro ainda.</p>';
+}
+function rowHTML(o){
+  if(o.t==='r'){const r=o.x,st=r.cancelado?['Cancelado','pend']:r.recv>=r.final?['Recebido','ok']:r.recv>0?['Parcial','par']:['Pendente','pend'];
+    return `<div class="item" onclick="openDoc('r',${r.id})"><div class="t"><b>Recibo ${num6(r.id)} · ${esc(r.client)}</b><small>${dBR(r.issue)} · ${money(r.final)}</small></div><span class="tag ${st[1]}">${st[0]}</span></div>`}
+  const c=o.x;return `<div class="item" onclick="openDoc('c',${c.id})"><div class="t"><b>Checklist ${num6(c.id)} · ${esc(c.modelo)}</b><small>${dBR(c.data)}${c.placa?' · '+esc(c.placa):''}</small></div><span class="tag">Checklist</span></div>`;
+}
+function renderHist(){
+  const q=($('#busca').value||'').toLowerCase(), f=(document.querySelector('[name=hf]:checked')||{}).value||'all';
+  let all=[...recibos.map(r=>({t:'r',x:r,s:(num6(r.id)+r.client+r.plate+r.vmodel).toLowerCase()})),...checks.map(c=>({t:'c',x:c,s:(num6(c.id)+c.modelo+c.placa).toLowerCase()}))];
+  all=all.filter(o=>(f==='all'||o.t===f)&&o.s.includes(q)).sort((a,b)=>b.x.ts-a.x.ts);
+  $('#histList').innerHTML=all.length?all.map(rowHTML).join(''):'<p class="muted">Nada encontrado.</p>';
+}
+
+/* ---------- recibo ---------- */
+function initRecibo(){const f=$('#fR');if(!f.sdate.value)f.sdate.value=today();calc()}
+function calc(){
+  const f=$('#fR'),fin=Math.max(0,cents(f.value.value)-cents(f.disc.value));
+  $('#recvBox').style.display=f.sit.value==='parcial'?'block':'none';
+  const recv=f.sit.value==='recebido'?fin:f.sit.value==='parcial'?Math.min(fin,cents(f.recv.value)):0;
+  $('#fin').textContent=money(fin);$('#bal').textContent=money(fin-recv);
+  return{fin,recv};
+}
+function saveReceipt(e){
+  e.preventDefault();const f=e.target,{fin,recv}=calc(),box=$('#err');
+  if(fin<=0){box.style.display='block';box.textContent='Informe um valor maior que zero.';return false}
+  if(f.sit.value==='parcial'&&(recv<=0||recv>=fin)){box.style.display='block';box.textContent='No pagamento parcial, o valor recebido deve ser maior que zero e menor que o valor final.';return false}
+  box.style.display='none';
+  const id=(DB.get('seqR',0))+1;DB.set('seqR',id);
+  const r={id,ts:Date.now(),issue:today(),client:f.client.value.trim(),doc:f.doc.value.trim(),phone:f.phone.value.trim(),addr:f.addr.value.trim(),
+    stype:f.stype.value.trim(),sdate:f.sdate.value,desc:f.desc.value.trim(),vtype:f.vtype.value.trim(),vmodel:f.vmodel.value.trim(),plate:f.plate.value.trim().toUpperCase(),
+    orig:f.orig.value.trim(),dest:f.dest.value.trim(),value:cents(f.value.value),disc:cents(f.disc.value),final:fin,recv,method:recv>0?f.method.value:'',notes:f.notes.value.trim(),cancelado:false};
+  recibos.push(r);DB.set('recibos',recibos);f.reset();openDoc('r',id);return false;
+}
+function receiptDoc(r){
+  const F=(l,v,w)=>`<div class="f ${w||''}"><small>${l}</small>${esc(v)||'—'}</div>`;
+  const st=r.cancelado?'Cancelado':r.recv>=r.final?'Recebido':r.recv>0?'Parcialmente recebido':'Pendente';
+  return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${CO.tel}<br>CNPJ: ${CO.cnpj}</div></div>
+  <div class="tt"><h2>RECIBO Nº ${num6(r.id)}</h2><span>Emitido em ${dBR(r.issue)}</span></div>
+  <h3>Cliente</h3><div class="g">${F('Nome',r.client,'w')}${F('CPF / CNPJ',r.doc)}${F('Telefone',r.phone)}${F('Endereço',r.addr,'w')}</div>
+  <h3>Serviço e veículo</h3><div class="g">${F('Serviço',r.stype)}${F('Data',dBR(r.sdate))}${F('Veículo',r.vtype)}${F('Marca / modelo',r.vmodel)}${F('Placa',r.plate)}<div></div>${F('Origem',r.orig)}${F('Destino',r.dest)}${F('Descrição',r.desc,'w')}</div>
+  <h3>Valores</h3><table><tr><td>Valor do serviço</td><td>${money(r.value)}</td></tr><tr><td>Desconto</td><td>− ${money(r.disc)}</td></tr>
+  <tr class="hl"><td>Valor final</td><td>${money(r.final)}</td></tr><tr><td>Valor recebido</td><td>${money(r.recv)}</td></tr><tr class="hl"><td>Saldo pendente</td><td>${money(r.final-r.recv)}</td></tr></table>
+  <p style="margin:6px 0 0">Situação: <b>${st}</b> · Pagamento: <b>${esc(r.method)||'—'}</b></p>
+  <h3>Declaração</h3><p style="margin:0">Declaro que ${CO.nome}, CNPJ ${CO.cnpj}, prestou o serviço de <b>${esc(r.stype)}</b> a <b>${esc(r.client)}</b>, no valor de <b>${money(r.final)}</b>${r.recv>0?`, tendo recebido <b>${money(r.recv)}</b>`:''}.</p>
+  ${r.notes?`<p><b>Observações:</b> ${esc(r.notes)}</p>`:''}
+  <div class="sign"><div>${CO.cidade}, ${dBR(r.issue)}</div><div style="height:50px"></div><div class="ln"></div><b>${CO.nome}</b><br><small>Assinatura do responsável</small></div>
+  <div class="foot">${CO.nome} · ${CO.tel} · CNPJ ${CO.cnpj}</div>`;
+}
+
+/* ---------- checklist ---------- */
+const pads={};
+function initCheck(){
+  const f=$('#fC');
+  if(!f.data.value){f.data.value=today();const d=new Date();f.hora.value=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+  if(!$('#pneus').children.length){
+    $('#pneus').innerHTML=[['diant','Dianteiros'],['tras','Traseiros'],['estepe','Estepe']].map(([k,n])=>`<div><label>${n}</label><select name="pn_${k}"><option value="">—</option><option value="bom">Bom</option><option value="medio">Médio</option><option value="ruim">Ruim</option></select></div>`).join('');
+    $('#comb').innerHTML=['E','1/4','1/2','3/4','F'].map(c=>`<label class="chip"><input type="radio" name="comb" value="${c}"><span>${c}</span></label>`).join('');
+    $('#regs').innerHTML=Object.entries(REG).map(([k,n])=>`<div class="reg" data-r="${k}"><div class="top"><b>${n}</b><label class="chip" style="margin:0"><input type="checkbox" data-ok checked onchange="regOk(this)"><span>Sem avarias</span></label></div>
+      <div class="chips dmg" style="margin-top:8px;display:none">${Object.entries(TIPOS).map(([t,tn])=>`<label class="chip"><input type="checkbox" data-t="${t}"><span>${tn}</span></label>`).join('')}</div>
+      <input data-x placeholder="Onde? Ex.: porta dianteira" maxlength="200" style="display:none;margin-top:8px"></div>`).join('');
+    $('#acs').innerHTML=Object.entries(ACS).map(([k,n])=>`<div class="ac"><span>${n}</span><div class="chips">${['S','N','A'].map(o=>`<label class="chip xs"><input type="radio" name="ac_${k}" value="${o}" onclick="toggleRadio(this)"><span>${o}</span></label>`).join('')}</div></div>`).join('');
+  }
+  setupPad('ent');setupPad('mot');
+}
+function regOk(cb){const r=cb.closest('.reg');r.querySelector('.dmg').style.display=r.querySelector('[data-x]').style.display=cb.checked?'none':'block'}
+function toggleRadio(r){if(r.dataset.was==='1'){r.checked=false;r.dataset.was='0'}else{$$(`[name="${r.name}"]`).forEach(x=>x.dataset.was='0');r.dataset.was='1'}}
+function setupPad(k){
+  const c=$('#p_'+k);if(pads[k])return;const ratio=2,w=c.clientWidth||300;c.width=w*ratio;c.height=140*ratio;
+  const x=c.getContext('2d');x.scale(ratio,ratio);x.lineWidth=2.2;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#111';
+  const st={ctx:x,c,drawing:false,dirty:false};pads[k]=st;
+  const pos=e=>{const r=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return[t.clientX-r.left,t.clientY-r.top]};
+  const s=e=>{e.preventDefault();st.drawing=true;const[a,b]=pos(e);x.beginPath();x.moveTo(a,b)};
+  const m=e=>{if(!st.drawing)return;e.preventDefault();const[a,b]=pos(e);x.lineTo(a,b);x.stroke();st.dirty=true};
+  const u=()=>{st.drawing=false};
+  c.addEventListener('touchstart',s,{passive:false});c.addEventListener('touchmove',m,{passive:false});c.addEventListener('touchend',u);
+  c.addEventListener('mousedown',s);c.addEventListener('mousemove',m);window.addEventListener('mouseup',u);
+}
+function clearPad(k){const p=pads[k];p.ctx.clearRect(0,0,p.c.width,p.c.height);p.dirty=false}
+function padData(k){const p=pads[k];if(!p||!p.dirty)return'';
+  const t=document.createElement('canvas');t.width=p.c.width;t.height=p.c.height;const x=t.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,t.width,t.height);x.drawImage(p.c,0,0);return t.toDataURL('image/jpeg',.6)}
+function saveChecklist(e){
+  e.preventDefault();const f=e.target,pick=n=>(f.querySelector(`[name="${n}"]:checked`)||{}).value||'';
+  const id=(DB.get('seqC',0))+1;DB.set('seqC',id);
+  const av={};$$('#regs .reg').forEach(r=>{av[r.dataset.r]={ok:r.querySelector('[data-ok]').checked,tipos:[...r.querySelectorAll('[data-t]:checked')].map(i=>i.dataset.t),texto:r.querySelector('[data-x]').value.trim()}});
+  const ac={};Object.keys(ACS).forEach(k=>{const v=pick('ac_'+k);if(v)ac[k]=v});
+  const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
+    pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),av,ac,obs:f.obs.value.trim(),
+    entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:padData('mot')};
+  checks.push(c);DB.set('checks',checks);f.reset();clearPad('ent');clearPad('mot');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
+}
+function checkDoc(c){
+  const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
+  const F=(l,v)=>`<div class="f"><small>${l}</small>${esc(v)||'—'}</div>`;
+  const avs=Object.entries(REG).map(([k,n])=>{const a=c.av[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('');
+  const acs=Object.entries(ACS).filter(([k])=>c.ac[k]).map(([k,n])=>`<tr><td>${n}</td><td style="text-align:left">${{S:'Sim',N:'Não existe',A:'Avariado'}[c.ac[k]]}</td></tr>`).join('');
+  return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${CO.tel}<br>CNPJ: ${CO.cnpj}</div></div>
+  <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
+  <h3>Veículo</h3><div class="g">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}</div>
+  <h3>Pneus, documento e limpeza</h3><div class="g">${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
+  <h3>Avarias</h3><table class="av">${avs}</table>
+  ${acs?`<h3>Acessórios</h3><table class="av">${acs}</table>`:''}
+  ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
+  <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
+  <div>${c.sigMot?`<img src="${c.sigMot}">`:'<div style="height:50px"></div>'}<div style="border-top:1px solid #111"></div>Motorista<br>${esc(c.motNome)}</div></div>
+  <div class="foot">${CO.nome} · ${CO.tel} · CNPJ ${CO.cnpj}</div>`;
+}
+
+/* ---------- documento ---------- */
+function openDoc(t,id){
+  const o=(t==='r'?recibos:checks).find(x=>x.id===id);if(!o)return;
+  curDoc={t,id,o};$('#doc').innerHTML=t==='r'?receiptDoc(o):checkDoc(o);
+  $('#btnWa').style.display=t==='r'?'inline-block':'none';
+  const from=cur==='doc'?prev:cur;prev=from;cur='doc';
+  $$('.view').forEach(e=>e.classList.remove('on','print'));$('#v-doc').classList.add('on','print');
+  $$('#nav button').forEach(b=>b.classList.remove('on'));window.scrollTo(0,0);
+}
+function printDoc(){const n=(curDoc.t==='r'?'Recibo-':'Checklist-')+num6(curDoc.id);if(A)A.print(n);else window.print()}
+function shareWa(){const r=curDoc.o,txt=`Olá, ${r.client}! Segue o recibo ${num6(r.id)} da ${CO.nome} no valor de ${money(r.final)}. Obrigado!`;
+  if(A)A.openWhatsApp(r.phone||'',txt);else window.open('https://wa.me/?text='+encodeURIComponent(txt))}
+function delDoc(){
+  if(!confirm('Excluir este registro? Isso não pode ser desfeito.'))return;
+  if(curDoc.t==='r'){recibos=recibos.filter(x=>x.id!==curDoc.id);DB.set('recibos',recibos)}else{checks=checks.filter(x=>x.id!==curDoc.id);DB.set('checks',checks)}
+  go('hist');
+}
+
+/* ---------- atualização via GitHub ---------- */
+window.onUpdate=i=>{$('#updTxt').textContent='Atualização nova disponível · v'+i.version;$('#upd').classList.add('show');$('#updBtn').disabled=false;$('#updBtn').textContent='Atualizar';$('#chkMsg').textContent=''};
+window.onUpdateProgress=p=>{$('#updBar').style.width=p+'%';$('#updBtn').disabled=true;$('#updBtn').textContent=p<100?p+'%':'Instalando…'};
+window.onUpdateNeedsPermission=()=>{$('#updBtn').disabled=false;$('#updBtn').textContent='Atualizar';alert('Permita "Instalar apps desta fonte" para o TOP Guincho na tela que abriu, volte ao app e toque em Atualizar de novo.')};
+window.onUpdateError=()=>{$('#updBtn').disabled=false;$('#updBtn').textContent='Tentar de novo';$('#updBar').style.width='0';alert('Não foi possível baixar a atualização. Verifique a internet.')};
+function doUpdate(){if(A)A.startUpdate()}
+function manualCheck(){$('#chkMsg').textContent=' Procurando…';if(A)A.checkUpdate();setTimeout(()=>{if(!$('#upd').classList.contains('show'))$('#chkMsg').textContent=' Você está na versão mais recente.'},4000)}
+
+go('home');
+</script>
+</body>
+</html>
