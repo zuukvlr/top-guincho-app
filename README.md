@@ -17,3 +17,6 @@ Baixe `TopGuincho.apk` na aba **Releases** do repositório e instale no celular 
 
 ## Logo
 O logo no app é um desenho vetorial aproximado. Para usar o arquivo original, troque o `<symbol id="logo">` em `app/src/main/assets/www/index.html` por uma `<image>` e substitua os ícones em `app/src/main/res/drawable`.
+
+## Dados na nuvem (Firebase)
+Projeto Firebase: top-guincho-app. Recibos, checklists e clientes sincronizam via Firestore (com cache offline). Login por e-mail/senha. As regras estao em firestore.rules (colar em Firestore > Regras).

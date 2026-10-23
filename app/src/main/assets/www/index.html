@@ -61,6 +61,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .upd button{border:0;background:#fff;color:#000;font-weight:800;border-radius:10px;padding:10px 14px}
 .upd .bar{position:absolute;left:0;bottom:0;height:4px;background:#fff;width:0}
 .view{display:none}.view.on{display:block}
+#login{position:fixed;inset:0;z-index:50;background:var(--black);display:none;align-items:center;justify-content:center;padding:20px}
+#login .box{width:100%;max-width:380px;text-align:center}
+#login img{width:150px;height:auto;border-radius:10px;margin-bottom:10px}
+#login #lerr{background:#7f1d1d;border-radius:10px;padding:10px;margin-top:10px;display:none;text-align:left}
+.sugg{background:#222;border:1px solid var(--red);border-radius:10px;margin-top:4px;overflow:hidden}
+.sugg div{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.sugg div:last-child{border:0}.sugg small{color:var(--mut);display:block}
+nav.bar button{font-size:11px}
 #err{background:#7f1d1d;border-radius:10px;padding:10px;margin-top:10px;display:none}
 /* documento (recibo / checklist) — fundo branco para impressão */
 .doc{background:#fff;color:#111;border-radius:6px;padding:16px;font-size:13px}
@@ -97,6 +105,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 </head>
 <body>
 
+<div id="login">
+  <form class="box" onsubmit="return doLogin(event)">
+    <img src="logo.jpg" alt="TOP Guincho">
+    <h2 style="margin:6px 0 2px">Entrar</h2>
+    <p class="muted" style="margin:0 0 8px">Acesso da equipe TOP Guincho</p>
+    <label style="text-align:left">E-mail</label><input id="lmail" type="email" value="makurbanooficial@gmail.com" autocomplete="username">
+    <label style="text-align:left">Senha</label><input id="lpass" type="password" autocomplete="current-password">
+    <div id="lerr"></div>
+    <button class="btn" type="submit" id="lbtn">Entrar</button>
+  </form>
+</div>
+
 <header class="top">
   <img class="logo" src="logo.jpg" alt="TOP Guincho">
   <h1><b>TOP</b> Guincho<small>Recibo &amp; Checklist</small></h1>
@@ -123,7 +143,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
     <div class="card"><h2>Últimos registros</h2><div id="recent"></div></div>
     <div class="card"><h2>Empresa</h2>
       <b>TOP Guincho</b><br><span class="muted">Tel.: (92) 99174-4383<br>CNPJ: 22.678.354/0001-22</span>
-      <p class="muted" style="margin:10px 0 0">Versão <span id="ver">—</span></p>
+      <p class="muted" style="margin:10px 0 0">Versão <span id="ver">—</span><br>Conta: <span id="acct">—</span><br><span id="syncTxt"></span></p>
+      <button class="btn ghost sm" style="margin-top:8px" onclick="logout()">Sair da conta</button>
       <button class="btn ghost sm" style="margin-top:8px" onclick="manualCheck()">Procurar atualização</button>
       <span class="muted" id="chkMsg"></span>
     </div>
@@ -133,10 +154,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
   <section class="view" id="v-recibo">
     <form id="fR" onsubmit="return saveReceipt(event)">
       <div class="card"><h2>Cliente</h2>
-        <label>Nome completo *</label><input name="client" required maxlength="150">
+        <label>Nome completo * <span class="muted">(digite para buscar cliente cadastrado)</span></label><input name="client" required maxlength="150" autocomplete="off">
         <div class="row"><div><label>CPF / CNPJ</label><input name="doc" inputmode="numeric" maxlength="18" data-mask="doc" placeholder="000.000.000-00"></div>
         <div><label>Telefone</label><input name="phone" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000"></div></div>
         <label>Endereço</label><input name="addr" maxlength="255">
+        <label class="chip" style="display:block;margin-top:12px"><input type="checkbox" name="saveCli" checked><span style="display:inline-block">Salvar / atualizar no cadastro de clientes</span></label>
       </div>
       <div class="card"><h2>Serviço</h2>
         <label>Tipo de serviço *</label><input name="stype" required maxlength="120" list="svcs" placeholder="Ex.: Reboque / Guincho plataforma">
@@ -188,7 +210,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
       <div class="card"><h2>Acessórios</h2><p class="muted" style="margin:0 0 6px">S = existe · N = não existe · A = avariado</p><div id="acs"></div></div>
       <div class="card"><h2>Observações</h2><input name="obs" maxlength="400" placeholder="Opcional"></div>
       <div class="card"><h2>Assinaturas</h2>
-        <label>Cliente — nome</label><input name="entNome" maxlength="80">
+        <label>Cliente — nome <span class="muted">(digite para buscar)</span></label><input name="entNome" maxlength="80" autocomplete="off">
         <label>Cliente — telefone</label><input name="entTel" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000">
         <label>Assinatura do cliente</label><div class="pad"><canvas id="p_ent"></canvas><button type="button" onclick="clearPad('ent')">Limpar</button></div>
         <label>Motorista</label><input name="motNome" maxlength="80" value="Rodrigo Aguiar">
@@ -210,6 +232,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
     <div class="card" id="histList"></div>
   </section>
 
+  <!-- CLIENTES -->
+  <section class="view" id="v-clientes">
+    <input id="buscaCli" type="search" placeholder="Buscar por nome, telefone ou CPF/CNPJ" oninput="renderClientes()">
+    <button class="btn" onclick="editCli()" style="margin-bottom:12px">+ Novo cliente</button>
+    <div class="card" id="cliList"></div>
+  </section>
+  <section class="view" id="v-cliform">
+    <form class="card" onsubmit="return saveCliForm(event)" id="fCli">
+      <h2 id="cliTitle">Cliente</h2>
+      <input type="hidden" name="id">
+      <label>Nome completo *</label><input name="nome" required maxlength="150">
+      <div class="row"><div><label>CPF / CNPJ</label><input name="doc" inputmode="numeric" maxlength="18" data-mask="doc" placeholder="000.000.000-00"></div>
+      <div><label>Telefone</label><input name="phone" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000"></div></div>
+      <label>Endereço</label><input name="addr" maxlength="255">
+      <button class="btn" type="submit">Salvar</button>
+      <button class="btn ghost" type="button" onclick="back()">Cancelar</button>
+      <button class="btn ghost" type="button" id="cliDel" onclick="delCli()" style="display:none">Excluir cliente</button>
+    </form>
+  </section>
+
   <!-- DOCUMENTO -->
   <section class="view" id="v-doc">
     <div class="noprint" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
@@ -226,9 +268,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
   <button data-v="home" class="on" onclick="go('home')"><svg viewBox="0 0 24 24"><path d="M3 11 12 3l9 8v10H3z"/></svg>Início</button>
   <button data-v="recibo" onclick="go('recibo')"><svg viewBox="0 0 24 24"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>Recibo</button>
   <button data-v="check" onclick="go('check')"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="m8 12 3 3 5-6"/></svg>Checklist</button>
+  <button data-v="clientes" onclick="go('clientes')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Clientes</button>
   <button data-v="hist" onclick="go('hist')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Histórico</button>
 </nav>
 
+<script src="lib/firebase-app-compat.js"></script>
+<script src="lib/firebase-auth-compat.js"></script>
+<script src="lib/firebase-firestore-compat.js"></script>
 <script>
 const CO={nome:'TOP Guincho',tel:'(92) 99174-4383',cnpj:'22.678.354/0001-22',cidade:'Manaus',signer:'Rodrigo Aguiar'};
 const REG={frente:'Frente',traseira:'Traseira',lat_dir:'Lateral direita',lat_esq:'Lateral esquerda',teto:'Teto / capô',interior:'Interior / painel'};
@@ -237,12 +283,43 @@ const ACS={estepe:'Estepe',macaco:'Macaco',chave_roda:'Chave de roda',triangulo:
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const A=window.Android;
 
-/* ---------- armazenamento ---------- */
-const DB={
-  get(k,d){try{return JSON.parse(localStorage.getItem('tg_'+k))??d}catch(e){return d}},
-  set(k,v){try{localStorage.setItem('tg_'+k,JSON.stringify(v))}catch(e){alert('Sem espaço para salvar.')}}
-};
-let recibos=DB.get('recibos',[]), checks=DB.get('checks',[]);
+/* ---------- dados (Firebase / Firestore, com cache offline) ---------- */
+let recibos=[], checks=[], clientes=[];
+let fs=null, auth=null, unsubs=[];
+const FB={apiKey:'AIzaSyCWEEOXgqY2VhJFgxO-fGHaGJooZIjntLo',authDomain:'top-guincho-app.firebaseapp.com',projectId:'top-guincho-app',appId:'1:912090685231:android:8adc260949c6c122d60bda'};
+function initFirebase(){
+  if(typeof firebase==='undefined'){$('#login').style.display='flex';$('#lerr').style.display='block';$('#lerr').textContent='Não foi possível carregar o Firebase.';return}
+  firebase.initializeApp(FB);auth=firebase.auth();fs=firebase.firestore();
+  fs.enablePersistence({synchronizeTabs:false}).catch(()=>{});
+  auth.onAuthStateChanged(u=>{if(u){$('#login').style.display='none';startData(u)}else{stopData();$('#login').style.display='flex'}});
+}
+function startData(u){
+  stopData();$('#acct').textContent=u.email||'';
+  const L=(col,set)=>fs.collection(col).onSnapshot(sn=>{set(sn.docs.map(d=>d.data()));
+    $('#syncTxt').textContent=sn.metadata.fromCache?'Sem conexão: dados salvos no aparelho, sincroniza ao voltar a internet.':'Sincronizado com a nuvem.';refresh()},e=>{$('#syncTxt').textContent='Erro de acesso aos dados: '+(e.code||e.message)});
+  unsubs=[L('recibos',a=>recibos=a),L('checklists',a=>checks=a),L('clientes',a=>clientes=a)];
+}
+function stopData(){unsubs.forEach(f=>f());unsubs=[];recibos=[];checks=[];clientes=[];refresh()}
+function refresh(){if(cur==='home')renderHome();if(cur==='hist')renderHist();if(cur==='clientes')renderClientes()}
+function put(col,o){fs.collection(col).doc(String(o.id)).set(o).catch(e=>alert('Falha ao salvar: '+(e.message||e)))}
+function del(col,id){fs.collection(col).doc(String(id)).delete().catch(e=>alert('Falha ao excluir: '+(e.message||e)))}
+async function nextId(kind){
+  const arr=kind==='recibos'?recibos:checks,localMax=arr.reduce((m,x)=>Math.max(m,x.id||0),0);
+  try{
+    const ref=fs.collection('meta').doc('contadores');
+    return await Promise.race([fs.runTransaction(async t=>{const d=await t.get(ref);const c=(d.exists&&d.data()[kind])||0;const n=Math.max(c,localMax)+1;t.set(ref,{[kind]:n},{merge:true});return n}),
+      new Promise((_,j)=>setTimeout(()=>j('timeout'),6000))]);
+  }catch(e){return localMax+1}
+}
+function doLogin(e){
+  e.preventDefault();const b=$('#lbtn'),err=$('#lerr');err.style.display='none';b.disabled=true;b.textContent='Entrando…';
+  auth.signInWithEmailAndPassword($('#lmail').value.trim(),$('#lpass').value).then(()=>{$('#lpass').value=''}).catch(x=>{
+    const c=x.code||'';err.style.display='block';
+    err.textContent=/invalid|wrong|user-not-found/.test(c)?'E-mail ou senha incorretos.':/network/.test(c)?'Sem conexão com a internet.':/too-many/.test(c)?'Muitas tentativas. Aguarde alguns minutos.':'Não foi possível entrar ('+c+').';
+  }).finally(()=>{b.disabled=false;b.textContent='Entrar'});
+  return false;
+}
+function logout(){if(confirm('Sair da conta neste aparelho?'))auth.signOut()}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cents=v=>{v=String(v||'').trim();if(!v)return 0;v=v.replace(/\./g,'').replace(',','.');const n=Math.round(parseFloat(v)*100);return isNaN(n)?0:n};
 const money=c=>'R$ '+(c<0?'-':'')+Math.floor(Math.abs(c)/100).toLocaleString('pt-BR')+','+String(Math.abs(c)%100).padStart(2,'0');
@@ -263,13 +340,13 @@ function go(v){
   prev=cur; cur=v;
   $$('.view').forEach(e=>e.classList.remove('on','print'));
   $('#v-'+v).classList.add('on');
-  $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  $$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===(v==='cliform'?'clientes':v)));
   window.scrollTo(0,0);
-  if(v==='home')renderHome(); if(v==='hist')renderHist();
+  if(v==='home')renderHome(); if(v==='hist')renderHist(); if(v==='clientes')renderClientes();
   if(v==='recibo')initRecibo(); if(v==='check')initCheck();
 }
 function back(){go(prev==='doc'?'home':prev)}
-window.onBack=()=>{if(cur!=='home'){cur==='doc'?back():go('home');return true}return false};
+window.onBack=()=>{if(cur!=='home'){(cur==='doc'||cur==='cliform')?back():go('home');return true}return false};
 
 /* ---------- logo ---------- */
 function logoHTML(){return '<img src="logo.jpg" alt="">'}
@@ -303,16 +380,17 @@ function calc(){
   $('#fin').textContent=money(fin);$('#bal').textContent=money(fin-recv);
   return{fin,recv};
 }
-function saveReceipt(e){
+async function saveReceipt(e){
   e.preventDefault();const f=e.target,{fin,recv}=calc(),box=$('#err');
   if(fin<=0){box.style.display='block';box.textContent='Informe um valor maior que zero.';return false}
   if(f.sit.value==='parcial'&&(recv<=0||recv>=fin)){box.style.display='block';box.textContent='No pagamento parcial, o valor recebido deve ser maior que zero e menor que o valor final.';return false}
   box.style.display='none';
-  const id=(DB.get('seqR',0))+1;DB.set('seqR',id);
+  const btn=f.querySelector('[type=submit]');btn.disabled=true;const id=await nextId('recibos');
   const r={id,ts:Date.now(),issue:today(),client:f.client.value.trim(),doc:f.doc.value.trim(),phone:f.phone.value.trim(),addr:f.addr.value.trim(),
     stype:f.stype.value.trim(),sdate:f.sdate.value,desc:f.desc.value.trim(),vtype:f.vtype.value.trim(),vmodel:f.vmodel.value.trim(),plate:f.plate.value.trim().toUpperCase(),
     orig:f.orig.value.trim(),dest:f.dest.value.trim(),value:cents(f.value.value),disc:cents(f.disc.value),final:fin,recv,method:recv>0?f.method.value:'',notes:f.notes.value.trim(),cancelado:false};
-  recibos.push(r);DB.set('recibos',recibos);f.reset();openDoc('r',id);return false;
+  if(f.saveCli.checked)upsertCli({nome:r.client,doc:r.doc,phone:r.phone,addr:r.addr});
+  recibos.push(r);put('recibos',r);f.reset();f.saveCli.checked=true;btn.disabled=false;openDoc('r',id);return false;
 }
 function receiptDoc(r){
   const F=(l,v,w)=>`<div class="f ${w||''}"><small>${l}</small>${esc(v)||'—'}</div>`;
@@ -361,15 +439,15 @@ function setupPad(k){
 function clearPad(k){const p=pads[k];p.ctx.clearRect(0,0,p.c.width,p.c.height);p.dirty=false}
 function padData(k){const p=pads[k];if(!p||!p.dirty)return'';
   const t=document.createElement('canvas');t.width=p.c.width;t.height=p.c.height;const x=t.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,t.width,t.height);x.drawImage(p.c,0,0);return t.toDataURL('image/jpeg',.6)}
-function saveChecklist(e){
+async function saveChecklist(e){
   e.preventDefault();const f=e.target,pick=n=>(f.querySelector(`[name="${n}"]:checked`)||{}).value||'';
-  const id=(DB.get('seqC',0))+1;DB.set('seqC',id);
+  const btn=f.querySelector('[type=submit]');btn.disabled=true;const id=await nextId('checklists');
   const av={};$$('#regs .reg').forEach(r=>{av[r.dataset.r]={ok:r.querySelector('[data-ok]').checked,tipos:[...r.querySelectorAll('[data-t]:checked')].map(i=>i.dataset.t),texto:r.querySelector('[data-x]').value.trim()}});
   const ac={};Object.keys(ACS).forEach(k=>{const v=pick('ac_'+k);if(v)ac[k]=v});
   const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
     pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),av,ac,obs:f.obs.value.trim(),
     entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
-  checks.push(c);DB.set('checks',checks);f.reset();f.motNome.value=CO.signer;clearPad('ent');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
+  checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
 }
 function checkDoc(c){
   const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
@@ -402,9 +480,51 @@ function shareWa(){const r=curDoc.o,txt=`Olá, ${r.client}! Segue o recibo ${num
   if(A)A.openWhatsApp(r.phone||'',txt);else window.open('https://wa.me/?text='+encodeURIComponent(txt))}
 function delDoc(){
   if(!confirm('Excluir este registro? Isso não pode ser desfeito.'))return;
-  if(curDoc.t==='r'){recibos=recibos.filter(x=>x.id!==curDoc.id);DB.set('recibos',recibos)}else{checks=checks.filter(x=>x.id!==curDoc.id);DB.set('checks',checks)}
+  if(curDoc.t==='r'){recibos=recibos.filter(x=>x.id!==curDoc.id);del('recibos',curDoc.id)}else{checks=checks.filter(x=>x.id!==curDoc.id);del('checklists',curDoc.id)}
   go('hist');
 }
+
+/* ---------- clientes ---------- */
+const dg=v=>String(v||'').replace(/\D/g,'');
+function upsertCli(c){
+  const n=c.nome.trim().toLowerCase();
+  const ex=clientes.find(x=>(dg(c.doc)&&dg(x.doc)===dg(c.doc))||(dg(c.phone)&&dg(x.phone)===dg(c.phone))||x.nome.trim().toLowerCase()===n);
+  const o=ex?{...ex,nome:c.nome.trim(),doc:c.doc||ex.doc||'',phone:c.phone||ex.phone||'',addr:c.addr||ex.addr||''}:{id:fs.collection('clientes').doc().id,nome:c.nome.trim(),doc:c.doc||'',phone:c.phone||'',addr:c.addr||'',ts:Date.now()};
+  if(!ex)clientes.push(o);else Object.assign(ex,o);
+  put('clientes',o);
+}
+function renderClientes(){
+  const q=($('#buscaCli').value||'').toLowerCase(),qd=dg(q);
+  const l=clientes.filter(c=>!q||c.nome.toLowerCase().includes(q)||(qd&&(dg(c.phone).includes(qd)||dg(c.doc).includes(qd)))).sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  $('#cliList').innerHTML=l.length?l.map(c=>`<div class="item" onclick="editCli('${c.id}')"><div class="t"><b>${esc(c.nome)}</b><small>${esc(c.phone)||'sem telefone'}${c.doc?' · '+esc(c.doc):''}</small></div><span class="muted">›</span></div>`).join(''):'<p class="muted">Nenhum cliente cadastrado.</p>';
+}
+function editCli(id){
+  const f=$('#fCli'),c=clientes.find(x=>x.id===id)||{id:'',nome:'',doc:'',phone:'',addr:''};
+  f.id.value=c.id;f.nome.value=c.nome;f.doc.value=c.doc;f.phone.value=c.phone;f.addr.value=c.addr;
+  $('#cliTitle').textContent=c.id?'Editar cliente':'Novo cliente';$('#cliDel').style.display=c.id?'block':'none';go('cliform');
+}
+function saveCliForm(e){
+  e.preventDefault();const f=e.target,id=f.id.value||fs.collection('clientes').doc().id;
+  const old=clientes.find(x=>x.id===id),o={id,nome:f.nome.value.trim(),doc:f.doc.value.trim(),phone:f.phone.value.trim(),addr:f.addr.value.trim(),ts:old?old.ts:Date.now()};
+  if(old)Object.assign(old,o);else clientes.push(o);put('clientes',o);go('clientes');return false;
+}
+function delCli(){const id=$('#fCli').id.value;if(!id||!confirm('Excluir este cliente? Os recibos já emitidos não são alterados.'))return;clientes=clientes.filter(x=>x.id!==id);del('clientes',id);go('clientes')}
+/* sugestões ao digitar */
+function suggest(input,pick){
+  let box=null;const close=()=>{if(box){box.remove();box=null}};
+  input.addEventListener('input',()=>{
+    close();const q=input.value.trim().toLowerCase(),qd=dg(q);if(q.length<2)return;
+    const m=clientes.filter(c=>c.nome.toLowerCase().includes(q)||(qd.length>=3&&dg(c.phone).includes(qd))).slice(0,5);if(!m.length)return;
+    box=document.createElement('div');box.className='sugg';
+    box.innerHTML=m.map(c=>`<div data-id="${c.id}">${esc(c.nome)}<small>${esc(c.phone)}${c.doc?' · '+esc(c.doc):''}</small></div>`).join('');
+    const choose=e=>{const d=e.target.closest('[data-id]');if(d){e.preventDefault();pick(clientes.find(x=>x.id===d.dataset.id));close()}};
+    box.addEventListener('mousedown',choose);box.addEventListener('touchstart',choose,{passive:false});
+    input.insertAdjacentElement('afterend',box);
+  });
+  input.addEventListener('blur',()=>setTimeout(close,200));
+}
+(()=>{const f=$('#fR');const fill=c=>{f.client.value=c.nome;f.doc.value=c.doc;f.phone.value=c.phone;f.addr.value=c.addr};suggest(f.client,fill);suggest(f.phone,fill);
+  const g=$('#fC');suggest(g.entNome,c=>{g.entNome.value=c.nome;g.entTel.value=c.phone})})();
 
 /* ---------- atualização via GitHub ---------- */
 window.onUpdate=i=>{$('#updTxt').textContent='Atualização nova disponível · v'+i.version;$('#upd').classList.add('show');$('#updBtn').disabled=false;$('#updBtn').textContent='Atualizar';$('#chkMsg').textContent=''};
@@ -415,6 +535,7 @@ function doUpdate(){if(A)A.startUpdate()}
 function manualCheck(){$('#chkMsg').textContent=' Procurando…';if(A)A.checkUpdate();setTimeout(()=>{if(!$('#upd').classList.contains('show'))$('#chkMsg').textContent=' Você está na versão mais recente.'},4000)}
 
 go('home');
+initFirebase();
 </script>
 </body>
 </html>

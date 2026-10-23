@@ -12,6 +12,8 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import androidx.webkit.WebViewAssetLoader
 import android.app.Activity
 import org.json.JSONObject
 import kotlin.concurrent.thread
@@ -26,14 +28,20 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         updater = Updater(this)
+        // Serve os arquivos do app em https://appassets.androidplatform.net (origem https, necessária para o login/cache do Firebase).
+        val loader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
+            .build()
         web = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            settings.allowFileAccess = true
             webChromeClient = WebChromeClient()
             webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(v: WebView, r: WebResourceRequest): WebResourceResponse? =
+                    loader.shouldInterceptRequest(r.url)
+
                 override fun shouldOverrideUrlLoading(v: WebView, r: WebResourceRequest): Boolean {
-                    if (r.url.scheme == "file") return false
+                    if (r.url.host == WebViewAssetLoader.DEFAULT_DOMAIN) return false
                     startActivity(Intent(Intent.ACTION_VIEW, r.url)) // wa.me, tel:, etc.
                     return true
                 }
@@ -41,7 +49,7 @@ class MainActivity : Activity() {
                 override fun onPageFinished(v: WebView, url: String) = checkUpdate()
             }
             addJavascriptInterface(Bridge(), "Android")
-            loadUrl("file:///android_asset/www/index.html")
+            loadUrl("https://appassets.androidplatform.net/assets/www/index.html")
         }
         setContentView(web)
     }
