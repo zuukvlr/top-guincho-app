@@ -13,7 +13,7 @@ header.top{position:sticky;top:0;z-index:5;background:var(--black);border-bottom
 header.top h1{font-size:17px;margin:0;font-weight:800;letter-spacing:.3px}
 header.top h1 b{color:var(--red)}
 header.top small{display:block;color:var(--mut);font-weight:400;font-size:11px}
-.logo{width:42px;height:42px;flex:none}
+.logo{height:46px;width:auto;flex:none;border-radius:6px}
 main{padding:14px;max-width:720px;margin:0 auto}
 nav.bar{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:#000;border-top:2px solid var(--red)}
 nav.bar button{flex:1;background:none;border:0;color:var(--mut);padding:10px 2px 12px;font:600 12px system-ui;display:flex;flex-direction:column;align-items:center;gap:3px}
@@ -65,7 +65,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 /* documento (recibo / checklist) — fundo branco para impressão */
 .doc{background:#fff;color:#111;border-radius:6px;padding:16px;font-size:13px}
 .doc .hd{display:flex;gap:12px;align-items:center;border-bottom:4px solid var(--red);padding-bottom:10px}
-.doc .hd svg{width:64px;height:64px;flex:none}
+.doc .hd img{height:70px;width:auto;flex:none;border-radius:6px}
 .doc .hd .co{flex:1;line-height:1.3}
 .doc .hd .co b{font-size:16px}
 .doc h3{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#fff;background:var(--black);padding:4px 8px;border-left:5px solid var(--red)}
@@ -97,21 +97,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 </head>
 <body>
 
-<svg width="0" height="0" style="position:absolute">
-  <defs>
-    <symbol id="logo" viewBox="0 0 100 100">
-      <rect width="100" height="100" rx="14" fill="#0a0a0a"/>
-      <path d="M50 8 L86 19 L86 56 Q86 80 50 94 Q14 80 14 56 L14 19 Z" fill="#e10600"/>
-      <path d="M50 14 L80 23 L80 55 Q80 75 50 88 Q20 75 20 55 L20 23 Z" fill="#0a0a0a"/>
-      <text x="50" y="45" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="25" fill="#e10600" stroke="#fff" stroke-width="1.2">TOP</text>
-      <rect x="8" y="48" width="84" height="1.6" fill="#fff"/><rect x="8" y="68" width="84" height="1.6" fill="#fff"/>
-      <text x="50" y="64" text-anchor="middle" font-family="Arial Black,Impact,sans-serif" font-weight="900" font-size="15" fill="#fff">Guincho</text>
-    </symbol>
-  </defs>
-</svg>
-
 <header class="top">
-  <svg class="logo"><use href="#logo"/></svg>
+  <img class="logo" src="logo.jpg" alt="TOP Guincho">
   <h1><b>TOP</b> Guincho<small>Recibo &amp; Checklist</small></h1>
 </header>
 
@@ -147,8 +134,8 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
     <form id="fR" onsubmit="return saveReceipt(event)">
       <div class="card"><h2>Cliente</h2>
         <label>Nome completo *</label><input name="client" required maxlength="150">
-        <div class="row"><div><label>CPF / CNPJ</label><input name="doc" inputmode="numeric" maxlength="18"></div>
-        <div><label>Telefone</label><input name="phone" inputmode="tel" maxlength="20" placeholder="(92) 90000-0000"></div></div>
+        <div class="row"><div><label>CPF / CNPJ</label><input name="doc" inputmode="numeric" maxlength="18" data-mask="doc" placeholder="000.000.000-00"></div>
+        <div><label>Telefone</label><input name="phone" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000"></div></div>
         <label>Endereço</label><input name="addr" maxlength="255">
       </div>
       <div class="card"><h2>Serviço</h2>
@@ -202,10 +189,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
       <div class="card"><h2>Observações</h2><input name="obs" maxlength="400" placeholder="Opcional"></div>
       <div class="card"><h2>Assinaturas</h2>
         <label>Cliente — nome</label><input name="entNome" maxlength="80">
-        <label>Cliente — telefone</label><input name="entTel" inputmode="tel" maxlength="20">
+        <label>Cliente — telefone</label><input name="entTel" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000">
         <label>Assinatura do cliente</label><div class="pad"><canvas id="p_ent"></canvas><button type="button" onclick="clearPad('ent')">Limpar</button></div>
-        <label>Motorista — nome</label><input name="motNome" maxlength="80">
-        <label>Assinatura do motorista</label><div class="pad"><canvas id="p_mot"></canvas><button type="button" onclick="clearPad('mot')">Limpar</button></div>
+        <label>Motorista</label><input name="motNome" maxlength="80" value="Rodrigo Aguiar">
+        <p class="muted" style="margin:6px 0 0">A assinatura do motorista é aplicada automaticamente.</p>
       </div>
       <div id="errC" style="background:#7f1d1d;border-radius:10px;padding:10px;display:none;margin-bottom:8px"></div>
       <button class="btn" type="submit">Gerar checklist</button>
@@ -243,7 +230,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 </nav>
 
 <script>
-const CO={nome:'TOP Guincho',tel:'(92) 99174-4383',cnpj:'22.678.354/0001-22',cidade:'Manaus'};
+const CO={nome:'TOP Guincho',tel:'(92) 99174-4383',cnpj:'22.678.354/0001-22',cidade:'Manaus',signer:'Rodrigo Aguiar'};
 const REG={frente:'Frente',traseira:'Traseira',lat_dir:'Lateral direita',lat_esq:'Lateral esquerda',teto:'Teto / capô',interior:'Interior / painel'};
 const TIPOS={arranhado:'Arranhado',amassado:'Amassado',piques:'Piques',trincado:'Trincado',quebrado:'Quebrado',falta:'Falta'};
 const ACS={estepe:'Estepe',macaco:'Macaco',chave_roda:'Chave de roda',triangulo:'Triângulo',extintor:'Extintor',manual:'Manual',chave_reserva:'Chave reserva',tapetes:'Tapetes',radio:'Rádio / multimídia',antena:'Antena',calotas:'Calotas',farol_aux:'Farol auxiliar',alarme:'Alarme',retrovisor:'Retrovisor interno',placa:'Placa veicular',forro_porta:'Forro de porta',banco_diant:'Banco dianteiro',banco_tras:'Banco traseiro',protetor_carter:'Protetor de cárter',cartao_gps:'Cartão / GPS'};
@@ -263,6 +250,13 @@ const dBR=d=>d?d.split('-').reverse().join('/'):'—';
 const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
 const num6=n=>String(n).padStart(6,'0');
 
+/* ---------- máscaras ---------- */
+const MASK={
+  phone:d=>{d=d.slice(0,11);return d.length>10?d.replace(/^(\d{2})(\d{5})(\d{0,4}).*/,'($1) $2-$3'):d.length>6?d.replace(/^(\d{2})(\d{4})(\d{0,4}).*/,'($1) $2-$3'):d.length>2?d.replace(/^(\d{2})(\d*)/,'($1) $2'):d.length?'('+d:''},
+  doc:d=>{d=d.slice(0,14);return d.length<=11?d.replace(/^(\d{3})(\d{0,3})(\d{0,3})(\d{0,2}).*/,(m,a,b,c,e)=>a+(b?'.'+b:'')+(c?'.'+c:'')+(e?'-'+e:'')):d.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})(\d{0,2}).*/,(m,a,b,c,e,g)=>a+'.'+b+'.'+c+(e?'/'+e:'')+(g?'-'+g:''))}
+};
+document.addEventListener('input',e=>{const t=e.target,m=t.dataset&&t.dataset.mask;if(m)t.value=MASK[m](t.value.replace(/\D/g,''))});
+
 /* ---------- navegação ---------- */
 let cur='home', prev='home', curDoc=null;
 function go(v){
@@ -277,8 +271,8 @@ function go(v){
 function back(){go(prev==='doc'?'home':prev)}
 window.onBack=()=>{if(cur!=='home'){cur==='doc'?back():go('home');return true}return false};
 
-/* ---------- logo (usa logo.png se existir) ---------- */
-function logoHTML(){return '<svg viewBox="0 0 100 100"><use href="#logo"/></svg>'}
+/* ---------- logo ---------- */
+function logoHTML(){return '<img src="logo.jpg" alt="">'}
 
 /* ---------- início / histórico ---------- */
 function renderHome(){
@@ -332,7 +326,7 @@ function receiptDoc(r){
   <p style="margin:6px 0 0">Situação: <b>${st}</b> · Pagamento: <b>${esc(r.method)||'—'}</b></p>
   <h3>Declaração</h3><p style="margin:0">Declaro que ${CO.nome}, CNPJ ${CO.cnpj}, prestou o serviço de <b>${esc(r.stype)}</b> a <b>${esc(r.client)}</b>, no valor de <b>${money(r.final)}</b>${r.recv>0?`, tendo recebido <b>${money(r.recv)}</b>`:''}.</p>
   ${r.notes?`<p><b>Observações:</b> ${esc(r.notes)}</p>`:''}
-  <div class="sign"><div>${CO.cidade}, ${dBR(r.issue)}</div><div style="height:50px"></div><div class="ln"></div><b>${CO.nome}</b><br><small>Assinatura do responsável</small></div>
+  <div class="sign"><div>${CO.cidade}, ${dBR(r.issue)}</div><img src="signature.png" alt=""><div class="ln"></div><b>${CO.signer}</b><br><small>${CO.nome} · Assinatura do responsável</small></div>
   <div class="foot">${CO.nome} · ${CO.tel} · CNPJ ${CO.cnpj}</div>`;
 }
 
@@ -349,7 +343,7 @@ function initCheck(){
       <input data-x placeholder="Onde? Ex.: porta dianteira" maxlength="200" style="display:none;margin-top:8px"></div>`).join('');
     $('#acs').innerHTML=Object.entries(ACS).map(([k,n])=>`<div class="ac"><span>${n}</span><div class="chips">${['S','N','A'].map(o=>`<label class="chip xs"><input type="radio" name="ac_${k}" value="${o}" onclick="toggleRadio(this)"><span>${o}</span></label>`).join('')}</div></div>`).join('');
   }
-  setupPad('ent');setupPad('mot');
+  setupPad('ent');
 }
 function regOk(cb){const r=cb.closest('.reg');r.querySelector('.dmg').style.display=r.querySelector('[data-x]').style.display=cb.checked?'none':'block'}
 function toggleRadio(r){if(r.dataset.was==='1'){r.checked=false;r.dataset.was='0'}else{$$(`[name="${r.name}"]`).forEach(x=>x.dataset.was='0');r.dataset.was='1'}}
@@ -374,8 +368,8 @@ function saveChecklist(e){
   const ac={};Object.keys(ACS).forEach(k=>{const v=pick('ac_'+k);if(v)ac[k]=v});
   const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
     pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),av,ac,obs:f.obs.value.trim(),
-    entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:padData('mot')};
-  checks.push(c);DB.set('checks',checks);f.reset();clearPad('ent');clearPad('mot');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
+    entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
+  checks.push(c);DB.set('checks',checks);f.reset();f.motNome.value=CO.signer;clearPad('ent');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
 }
 function checkDoc(c){
   const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
@@ -390,7 +384,7 @@ function checkDoc(c){
   ${acs?`<h3>Acessórios</h3><table class="av">${acs}</table>`:''}
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
   <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
-  <div>${c.sigMot?`<img src="${c.sigMot}">`:'<div style="height:50px"></div>'}<div style="border-top:1px solid #111"></div>Motorista<br>${esc(c.motNome)}</div></div>
+  <div><img src="${c.sigMot||'signature.png'}" alt=""><div style="border-top:1px solid #111"></div>Motorista<br>${esc(c.motNome)}</div></div>
   <div class="foot">${CO.nome} · ${CO.tel} · CNPJ ${CO.cnpj}</div>`;
 }
 
