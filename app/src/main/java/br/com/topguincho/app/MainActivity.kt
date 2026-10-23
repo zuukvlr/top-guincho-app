@@ -65,9 +65,18 @@ class MainActivity : Activity() {
         }
     }
 
+    private var lastCheck = 0L
+
+    /** Ao voltar ao app depois de um tempo, procura atualização de novo. */
+    override fun onResume() {
+        super.onResume()
+        if (lastCheck != 0L && System.currentTimeMillis() - lastCheck > 10 * 60 * 1000) checkUpdate()
+    }
+
     private fun js(code: String) = runOnUiThread { web.evaluateJavascript(code, null) }
 
     private fun checkUpdate() {
+        lastCheck = System.currentTimeMillis()
         thread {
             try {
                 val r = updater.check() ?: return@thread

@@ -65,6 +65,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 #login .box{width:100%;max-width:380px;text-align:center}
 #login img{width:150px;height:auto;border-radius:10px;margin-bottom:10px}
 #login #lerr{background:#7f1d1d;border-radius:10px;padding:10px;margin-top:10px;display:none;text-align:left}
+#updModal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:20px}
+#updModal.show{display:flex}
+#updModal .box{background:var(--card);border:2px solid var(--red);border-radius:18px;padding:20px;width:100%;max-width:360px;text-align:center}
+#updModal img{width:84px;height:auto;border-radius:8px}
+#updModal h2{margin:10px 0 4px}
+#updModal .notes{color:var(--mut);font-size:13px;margin:6px 0 0;white-space:pre-line;max-height:110px;overflow:auto}
+#updModal .pb{height:6px;background:#333;border-radius:3px;margin-top:14px;overflow:hidden;display:none}
+#updModal .pb i{display:block;height:100%;width:0;background:var(--red)}
 .sugg{background:#222;border:1px solid var(--red);border-radius:10px;margin-top:4px;overflow:hidden}
 .sugg div{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
 .sugg div:last-child{border:0}.sugg small{color:var(--mut);display:block}
@@ -115,6 +123,18 @@ nav.bar button{font-size:11px}
     <div id="lerr"></div>
     <button class="btn" type="submit" id="lbtn">Entrar</button>
   </form>
+</div>
+
+<div id="updModal">
+  <div class="box">
+    <img src="logo.jpg" alt="">
+    <h2>Atualização nova!</h2>
+    <div class="muted" id="umVer"></div>
+    <div class="notes" id="umNotes"></div>
+    <div class="pb" id="umPb"><i id="umBar"></i></div>
+    <button class="btn" id="umBtn" onclick="doUpdate()">Atualizar agora</button>
+    <button class="btn ghost" id="umLater" onclick="closeUpd()">Depois</button>
+  </div>
 </div>
 
 <header class="top">
@@ -531,11 +551,19 @@ function suggest(input,pick){
   const g=$('#fC');suggest(g.entNome,c=>{g.entNome.value=c.nome;g.entTel.value=c.phone})})();
 
 /* ---------- atualização via GitHub ---------- */
-window.onUpdate=i=>{$('#updTxt').textContent='Atualização nova disponível · v'+i.version;$('#upd').classList.add('show');$('#updBtn').disabled=false;$('#updBtn').textContent='Atualizar';$('#chkMsg').textContent=''};
-window.onUpdateProgress=p=>{$('#updBar').style.width=p+'%';$('#updBtn').disabled=true;$('#updBtn').textContent=p<100?p+'%':'Instalando…'};
-window.onUpdateNeedsPermission=()=>{$('#updBtn').disabled=false;$('#updBtn').textContent='Atualizar';alert('Permita "Instalar apps desta fonte" para o TOP Guincho na tela que abriu, volte ao app e toque em Atualizar de novo.')};
-window.onUpdateError=()=>{$('#updBtn').disabled=false;$('#updBtn').textContent='Tentar de novo';$('#updBar').style.width='0';alert('Não foi possível baixar a atualização. Verifique a internet.')};
-function doUpdate(){if(A)A.startUpdate()}
+let updShown='';
+window.onUpdate=i=>{
+  $('#updTxt').textContent='Atualização nova disponível · v'+i.version;$('#upd').classList.add('show');$('#updBtn').disabled=false;$('#updBtn').textContent='Atualizar';$('#chkMsg').textContent='';
+  $('#umVer').textContent='Versão '+i.version;$('#umNotes').textContent=(i.notes||'').trim();
+  if(updShown!==i.version){updShown=i.version;$('#updModal').classList.add('show')}
+};
+function closeUpd(){$('#updModal').classList.remove('show')}
+function setUpdBusy(t){$('#umBtn').disabled=true;$('#umBtn').textContent=t;$('#umLater').style.display='none'}
+window.onUpdateProgress=p=>{$('#updBar').style.width=p+'%';$('#umPb').style.display='block';$('#umBar').style.width=p+'%';setUpdBusy(p<100?'Baixando… '+p+'%':'Abrindo instalador…');$('#updBtn').disabled=true;$('#updBtn').textContent=p<100?p+'%':'Instalando…'};
+function updReset(t){$('#umBtn').disabled=false;$('#umBtn').textContent=t;$('#umLater').style.display='block';$('#umPb').style.display='none';$('#updBtn').disabled=false;$('#updBtn').textContent=t==='Atualizar agora'?'Atualizar':t}
+window.onUpdateNeedsPermission=()=>{updReset('Atualizar agora');alert('Permita "Instalar apps desta fonte" para o TOP Guincho na tela que abriu, volte ao app e toque em Atualizar de novo.')};
+window.onUpdateError=()=>{updReset('Tentar de novo');$('#updBar').style.width='0';alert('Não foi possível baixar a atualização. Verifique a internet.')};
+function doUpdate(){if(A){setUpdBusy('Iniciando…');A.startUpdate()}}
 function manualCheck(){$('#chkMsg').textContent=' Procurando…';if(A)A.checkUpdate();setTimeout(()=>{if(!$('#upd').classList.contains('show'))$('#chkMsg').textContent=' Você está na versão mais recente.'},4000)}
 
 go('home');
