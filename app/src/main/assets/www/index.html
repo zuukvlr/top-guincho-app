@@ -50,8 +50,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .muted{color:var(--mut);font-size:13px}
 .reg{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:10px;background:#141414}
 .reg .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.ac{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);gap:8px}
-.ac:last-child{border:0}
+#acs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ac .chips{gap:6px;flex-wrap:nowrap}
+.ac .chip.xs span{padding:5px 0;min-width:36px;font-size:13px}
+.ac{display:flex;flex-direction:column;gap:4px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:#141414;font-size:13px}
 .pad{position:relative;background:#fff;border-radius:10px;margin-top:4px}
 .pad canvas{width:100%;height:140px;display:block;touch-action:none}
 .pad button{position:absolute;right:6px;top:6px;border:0;background:#ddd;color:#000;border-radius:8px;padding:4px 10px;font-size:12px}
@@ -104,6 +106,12 @@ nav.bar button{font-size:11px}
 .doc .tt h2{margin:0;font-size:18px;color:var(--red)}
 .doc .g{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
 .doc .g .w{grid-column:1/-1}
+.doc .g3{grid-template-columns:repeat(3,1fr)}
+.doc .g4{grid-template-columns:repeat(4,1fr)}
+.doc .gi .f{display:flex;gap:4px;align-items:baseline;flex-wrap:wrap}
+.doc .gi .f small{display:inline;margin:0}
+.doc .ck h3{margin:9px 0 4px}
+.doc .ck .g{gap:3px 12px}
 .doc .f small{display:block;color:#666;font-size:10px;text-transform:uppercase}
 .doc table{width:100%;border-collapse:collapse}
 .doc td,.doc th{padding:5px 6px;border-bottom:1px solid #ddd;text-align:left;font-size:12px}
@@ -540,9 +548,26 @@ const MK='#e10600',bar=(css)=>`<i style="position:absolute;background:${MK};bord
 const markInner=t=>t==='X'?bar('left:44%;top:-8%;width:12%;height:116%;transform:rotate(45deg)')+bar('left:44%;top:-8%;width:12%;height:116%;transform:rotate(-45deg)'):t==='-'?bar('left:-8%;top:43%;width:116%;height:14%'):`<i style="position:absolute;left:0;top:0;right:0;bottom:0;border:3px solid ${MK};border-radius:50%;box-sizing:border-box"></i>`;
 /* marcas novas (u:1) ficam sobre a foto do veículo; as antigas (desenho v1.0.17) continuam no desenho antigo.
    Marcas em HTML/CSS (e não SVG) para o PDF desenhá-las sempre. */
-function carHTML(ms){
-  ms=ms||[];if(ms.some(m=>!m.u))return carSvg(ms);
+function carOne(ms){ // marcas da v1.0.18 (u:1): foto única do veículo
   return `<div class="carmap" style="position:relative"><img src="carro.jpg" alt="" style="display:block;width:100%;height:auto">${ms.map(m=>`<div style="position:absolute;left:${(m.x*100).toFixed(2)}%;top:${(m.y*100).toFixed(2)}%;width:7%;padding-top:7%;transform:translate(-50%,-50%)">${markInner(m.t)}</div>`).join('')}</div>`;
+}
+/* vistas separadas, no formato da ficha: esquerda/direita/topo à esquerda; frente/traseira/legenda à direita */
+const VIEWS={le:{src:'v_le.png',w:.59},ld:{src:'v_ld.png',w:.59},tp:{src:'v_tp.png',w:.59},fr:{src:'v_fr.png',w:.39},tr:{src:'v_tr.png',w:.39}};
+function viewHTML(k,ms){
+  const V=VIEWS[k],mw=(5/(V.w*100)*100).toFixed(2); // marca com ~5% da largura total do mapa
+  return `<div class="vw" data-v="${k}" style="position:relative"><img src="${V.src}" alt="" style="display:block;width:100%;height:auto">${ms.filter(m=>m.v===k).map(m=>`<div style="position:absolute;left:${(m.x*100).toFixed(2)}%;top:${(m.y*100).toFixed(2)}%;width:${mw}%;padding-top:${mw}%;transform:translate(-50%,-50%)">${markInner(m.t)}</div>`).join('')}</div>`;
+}
+function legendBox(ms){
+  const n=t=>ms.filter(x=>x.t===t).length,row=(i,l,c)=>`<div style="margin-top:3px"><b style="color:#e10600;display:inline-block;width:14px;font-size:13px">${i}</b>${l} <span style="color:#666">(${c})</span></div>`;
+  return `<div style="border:1.5px solid #222;border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.3;color:#111;background:#fff"><b style="font-size:10px;letter-spacing:.3px">ASSINALE CONFORME LEGENDA:</b>${row('X','Batido',n('X'))}${row('–','Riscado',n('-'))}${row('O','Quebrado',n('O'))}</div>`;
+}
+function carViews(ms){
+  return `<div class="carmap" style="display:flex;gap:2%;align-items:flex-start;background:#fff"><div style="width:59%;display:flex;flex-direction:column;gap:6px">${viewHTML('le',ms)}${viewHTML('ld',ms)}${viewHTML('tp',ms)}</div><div style="width:39%;display:flex;flex-direction:column;gap:6px">${viewHTML('fr',ms)}${viewHTML('tr',ms)}${legendBox(ms)}</div></div>`;
+}
+const marksKind=ms=>!ms||!ms.length?'views':ms.some(m=>!m.u)?'legacy':ms.some(m=>m.u===1)?'one':'views';
+function carHTML(ms){
+  ms=ms||[];const k=marksKind(ms);
+  return k==='legacy'?carSvg(ms):k==='one'?carOne(ms):carViews(ms);
 }
 let marks=[];
 function renderDmg(){const b=$('#dmgBox');if(!b)return;b.innerHTML=carHTML(marks);$('#dmgCount').textContent=marks.length?marks.length+' marca(s)':''}
@@ -550,12 +575,12 @@ function dmgUndo(){marks.pop();renderDmg()}
 function dmgClear(){if(marks.length&&!confirm('Remover todas as marcas?'))return;marks=[];renderDmg()}
 (()=>{const b=$('#dmgBox');if(!b)return;
   b.addEventListener('click',e=>{
-    const im=b.querySelector('img');if(!im)return;
-    const r=im.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+    const vw=e.target.closest('.vw');if(!vw)return;
+    const im=vw.querySelector('img'),k=vw.dataset.v,r=im.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
     if(x<0||x>1||y<0||y>1)return;
-    const hit=marks.findIndex(m=>Math.hypot((m.x-x)*r.width,(m.y-y)*r.height)<18);
+    const hit=marks.findIndex(m=>m.v===k&&Math.hypot((m.x-x)*r.width,(m.y-y)*r.height)<18);
     if(hit>=0)marks.splice(hit,1);
-    else marks.push({u:1,x:+x.toFixed(4),y:+y.toFixed(4),t:($('input[name=dtool]:checked')||{}).value||'X'});
+    else marks.push({u:2,v:k,x:+x.toFixed(4),y:+y.toFixed(4),t:($('input[name=dtool]:checked')||{}).value||'X'});
     renderDmg();
   });
 })();
@@ -599,20 +624,21 @@ async function saveChecklist(e){
 function checkDoc(c){
   const C=c.co||CO;
   const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
-  const F=(l,v)=>`<div class="f"><small>${l}</small>${esc(v)||'—'}</div>`;
+  const F=(l,v)=>`<div class="f"><small>${l}:</small>${esc(v)||'—'}</div>`;
   const oldAv=()=>'<table class="av">'+Object.entries(REG).map(([k,n])=>{const a=(c.av||{})[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('')+'</table>';
-  const dmg=c.marks?`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:''}`:oldAv();
-  const acs=Object.entries(ACS).filter(([k])=>c.ac[k]).map(([k,n])=>`<tr><td>${n}</td><td style="text-align:left">${{S:'Sim',N:'Não existe',A:'Avariado'}[c.ac[k]]}</td></tr>`).join('');
-  return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
+  const kind=marksKind(c.marks),desc=c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:'';
+  const dmg=!c.marks?oldAv():kind==='views'?`<div style="max-width:600px;margin:0 auto">${carViews(c.marks)}</div>`+desc:`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${desc}`;
+  const acs=Object.entries(ACS).filter(([k])=>c.ac[k]).map(([k,n])=>`<div class="f"><small>${n}:</small>${{S:'Sim',N:'Não',A:'Avariado'}[c.ac[k]]}</div>`).join('');
+  return `<div class="ck"><div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
-  <h3>Veículo</h3><div class="g">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}</div>
-  <h3>Pneus, documento e limpeza</h3><div class="g">${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
+  <h3>Veículo</h3><div class="g g3 gi">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}</div>
+  <h3>Pneus, documento e limpeza</h3><div class="g g3 gi">${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
   <h3>Avarias</h3>${dmg}
-  ${acs?`<h3>Acessórios</h3><table class="av">${acs}</table>`:''}
+  ${acs?`<h3>Acessórios</h3><div class="g g4 gi">${acs}</div>`:''}
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
   <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
   <div><img src="${c.sigMot||'signature.png'}" alt=""><div style="border-top:1px solid #111"></div>Motorista<br>${esc(c.motNome)}</div></div>
-  <div class="foot">${CO.nome} · ${C.tel} · CNPJ ${C.cnpj}${C.addr?' · '+esc(C.addr):''}</div>`;
+  <div class="foot">${CO.nome} · ${C.tel} · CNPJ ${C.cnpj}${C.addr?' · '+esc(C.addr):''}</div></div>`;
 }
 
 /* ---------- documento ---------- */
@@ -633,7 +659,7 @@ async function docToPdf(){
   await Promise.all([...clone.querySelectorAll('img')].map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));
   let canvas;try{canvas=await html2canvas(clone,{scale:2,backgroundColor:'#fff'})}finally{holder.remove()}
   const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),W=210,H=297,imgH=canvas.height*W/canvas.width;
-  if(imgH<=H*1.25){ // uma página: reduz para caber, centralizado
+  if(imgH<=H*1.5){ // uma página: reduz para caber, centralizado
     const k=Math.min(1,H/imgH),w=W*k,hh=imgH*k;
     pdf.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',(W-w)/2,0,w,hh);
   }else{

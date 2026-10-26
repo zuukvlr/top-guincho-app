@@ -168,7 +168,7 @@ check(semVeiculo.valido && semVeiculo.doc, 'recibo pode ser emitido sem veículo
 // mapa de avarias: marcar X / – / O por toque, remover tocando na marca, sair no documento e no PDF
 await page.evaluate(() => { document.querySelector('#login').style.display = 'none'; go('check'); });
 await page.locator('#dmgBox').scrollIntoViewIfNeeded();
-const bx = await page.locator('#dmgBox img').boundingBox();
+const bx = await page.locator('#dmgBox .vw[data-v="le"] img').boundingBox();
 const at = (x, y) => [bx.x + x * bx.width, bx.y + y * bx.height];
 const tap = async (tool, x, y) => { await page.locator(`input[name=dtool][value="${tool}"]`).check({ force: true }); const [px, py] = at(x, y); await page.mouse.click(px, py); };
 await tap('X', 0.2, 0.1); await tap('-', 0.4, 0.15); await tap('O', 0.8, 0.4);
@@ -177,16 +177,23 @@ const [rx, ry] = at(0.4, 0.15); await page.mouse.click(rx, ry);
 check(await page.evaluate(() => marks.length) === 2, 'tocar numa marca existente remove a marca');
 const dmg = await page.evaluate(async () => {
   const c = document.querySelector('#fC'); c.modelo.value = 'Palio Marcas'; c.avObs.value = 'Amassado na porta';
+  document.querySelectorAll('#acs input[value=S]').forEach(r => r.checked = true); // todos os 20 acessórios
+  const cols = getComputedStyle(document.querySelector('#acs')).gridTemplateColumns.split(' ').length;
   await saveChecklist({ preventDefault() {}, target: c });
   const d = document.querySelector('#doc');
   const cm = await html2canvas(d.querySelector('.carmap'), { scale: 1, backgroundColor: '#fff' });
   const px = cm.getContext('2d').getImageData(0, 0, cm.width, cm.height).data; let red = 0;
   for (let i = 0; i < px.length; i += 4) if (px[i] > 200 && px[i + 1] < 60 && px[i + 2] < 60) red++;
   const b64 = await docToPdf();
-  return { red, x: d.querySelectorAll('.carmap > div').length, img: !!d.querySelector('.carmap img[src="carro.jpg"]'), leg: /Batido \(1\)/.test(d.innerText) && /Quebrado \(1\)/.test(d.innerText), obs: d.innerText.includes('Amassado na porta'), zerou: marks.length === 0, pdf: b64.length > 1000 };
+  const pages = (atob(b64).match(/\/Type\s*\/Page\b/g) || []).length;
+  return { cols, pages, accCols: getComputedStyle([...d.querySelectorAll('h3')].find(h => h.textContent === 'Acessórios').nextElementSibling).gridTemplateColumns.split(' ').length, red, x: d.querySelectorAll('.vw > div').length, views: d.querySelectorAll('.vw img').length, leg: /Batido \(1\)/.test(d.innerText) && /Quebrado \(1\)/.test(d.innerText), obs: d.innerText.includes('Amassado na porta'), zerou: marks.length === 0, pdf: b64.length > 1000 };
 });
 check(dmg.red > 150, 'as marcas aparecem desenhadas na imagem renderizada para o PDF (pixels vermelhos: ' + dmg.red + ')');
-check(dmg.img && dmg.x === 2 && dmg.leg && dmg.obs, 'documento do checklist mostra o desenho, as marcas, a legenda e a descrição');
+check(dmg.views === 5, 'o documento mostra as 5 vistas separadas (esquerda, direita, topo, frente, traseira)');
+check(dmg.x === 2 && dmg.leg && dmg.obs, 'documento do checklist mostra o desenho, as marcas, a legenda e a descrição');
+check(dmg.cols === 2, 'acessórios no formulário em 2 colunas');
+check(dmg.accCols === 4, 'acessórios no documento em 4 colunas');
+check(dmg.pages === 1, 'checklist completo (20 acessórios + avarias) sai em 1 página no PDF (tem ' + dmg.pages + ')');
 check(dmg.zerou && dmg.pdf, 'marcas zeram após salvar e o PDF do checklist é gerado');
 
 await browser.close();
