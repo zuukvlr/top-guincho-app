@@ -111,6 +111,10 @@ nav.bar button{font-size:11px}
 .doc .gi .f{display:flex;gap:4px;align-items:baseline;flex-wrap:wrap}
 .doc .gi .f small{display:inline;margin:0}
 .doc .ck h3{margin:9px 0 4px}
+.doc .nota{margin:10px 0 0;text-align:center;font-weight:700;font-size:11px;color:#111}
+.doc .bx{display:inline-block;width:11px;height:11px;border:1.5px solid #111;margin-right:4px;vertical-align:-2px;position:relative;box-sizing:border-box}
+.doc .bx b{position:absolute;left:0;right:0;top:-3px;text-align:center;font-size:12px;line-height:12px;color:#e10600}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .doc .ck .g{gap:3px 12px}
 .doc .f small{display:block;color:#666;font-size:10px;text-transform:uppercase}
 .doc table{width:100%;border-collapse:collapse}
@@ -120,7 +124,7 @@ nav.bar button{font-size:11px}
 .doc .sign{margin-top:26px;text-align:center}
 .doc .sign img{height:34px;width:auto;max-width:150px;display:block;margin:6px auto -2px}
 .doc .sign .ln{border-top:1px solid #111;margin:2px auto 3px;width:70%}
-.doc .sg3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;text-align:center;font-size:11px}
+.doc .sg3{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:8px;text-align:center;font-size:11px}
 .doc .sg3 img{height:30px;width:auto;max-width:110px;display:block;margin:0 auto}
 .doc .foot{margin-top:14px;border-top:3px solid var(--red);padding-top:6px;text-align:center;font-size:11px;color:#444}
 .doc .av{font-size:12px}
@@ -232,10 +236,26 @@ nav.bar button{font-size:11px}
   <!-- CHECKLIST -->
   <section class="view" id="v-check">
     <form id="fC" onsubmit="return saveChecklist(event)">
+      <div class="card"><h2>Dados da vistoria <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">(opcionais)</span></h2>
+        <label>Sinistro nº</label><input name="sinistro" maxlength="30">
+        <div class="row"><div><label>Empresa solicitante</label><input name="empresa" maxlength="80"></div><div><label>Cia. seguradora</label><input name="cia" maxlength="80"></div></div>
+        <label>Funcionário</label><input name="func" maxlength="80">
+        <label>Tipo de guincho utilizado</label>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="guincho" value="plataforma" onclick="toggleRadio(this)"><span>Plataforma</span></label>
+          <label class="chip"><input type="radio" name="guincho" value="asa_delta" onclick="toggleRadio(this)"><span>Asa delta</span></label>
+          <label class="chip"><input type="radio" name="guincho" value="lanca" onclick="toggleRadio(this)"><span>Lança</span></label>
+        </div>
+        <label>Local de remoção</label><input name="localRem" maxlength="150">
+        <label>Local de entrega</label><input name="localEnt" maxlength="150">
+      </div>
       <div class="card"><h2>Veículo</h2>
         <div class="chips"><label class="chip"><input type="radio" name="tipo" value="usado" checked><span>Usado</span></label><label class="chip"><input type="radio" name="tipo" value="novo"><span>Novo</span></label></div>
         <div class="row"><div><label>Placa</label><input name="placa" maxlength="10" style="text-transform:uppercase"></div><div><label>KM</label><input name="km" inputmode="numeric" maxlength="12"></div></div>
         <label>Modelo *</label><input name="modelo" required maxlength="80" placeholder="Ex.: Fiat Palio 2014 preto">
+        <div class="row3"><div><label>Marca</label><input name="marca" maxlength="40"></div><div><label>Ano</label><input name="ano" inputmode="numeric" maxlength="4"></div><div><label>Cor</label><input name="cor" maxlength="30"></div></div>
+        <label>Proprietário — nome <span class="muted">(digite para buscar)</span></label><input name="prop" maxlength="120" autocomplete="off">
+        <label>Proprietário — telefone</label><input name="propTel" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000">
         <div class="row"><div><label>Data *</label><input type="date" name="data" required></div><div><label>Hora</label><input type="time" name="hora"></div></div>
         <label>UF / Cidade</label><input name="uf" value="AM / Manaus" maxlength="40">
       </div>
@@ -617,6 +637,7 @@ async function saveChecklist(e){
   const btn=f.querySelector('[type=submit]');btn.disabled=true;const id=await nextId('checklists');
   const ac={};Object.keys(ACS).forEach(k=>{const v=pick('ac_'+k);if(v)ac[k]=v});
   const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
+    sinistro:f.sinistro.value.trim(),empresa:f.empresa.value.trim(),cia:f.cia.value.trim(),func:f.func.value.trim(),guincho:pick('guincho'),localRem:f.localRem.value.trim(),localEnt:f.localEnt.value.trim(),marca:f.marca.value.trim(),ano:f.ano.value.trim(),cor:f.cor.value.trim(),prop:f.prop.value.trim(),propTel:f.propTel.value.trim(),
     pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),marks:marks.map(m=>({...m})),avObs:f.avObs.value.trim(),ac,obs:f.obs.value.trim(),
     entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
   c.co=coSnap();checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');marks=[];renderDmg();openDoc('c',id);return false;
@@ -624,20 +645,25 @@ async function saveChecklist(e){
 function checkDoc(c){
   const C=c.co||CO;
   const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
-  const F=(l,v)=>`<div class="f"><small>${l}:</small>${esc(v)||'—'}</div>`;
+  const F=(l,v,w)=>`<div class="f ${w||''}"><small>${l}:</small>${esc(v)||'—'}</div>`;
+  const Fo=(l,v,w)=>v?F(l,v,w):'';
+  const bx=on=>`<span class="bx">${on?'<b>X</b>':''}</span>`;
+  const GU={plataforma:'Plataforma',asa_delta:'Asa delta',lanca:'Lança'};
+  const info=[c.sinistro,c.empresa,c.func,c.cia,c.guincho,c.localRem,c.localEnt].some(Boolean)?`<h3>Dados da vistoria</h3><div class="g g3 gi">${Fo('Sinistro nº',c.sinistro)}${Fo('Empresa solicitante',c.empresa)}${Fo('Funcionário',c.func)}${Fo('Cia. seguradora',c.cia)}<div class="f w"><small>Guincho utilizado:</small>${Object.entries(GU).map(([k,n])=>`<span style="margin-right:12px;white-space:nowrap">${bx(c.guincho===k)}${n}</span>`).join('')}</div>${Fo('Local de remoção',c.localRem,'w')}${Fo('Local de entrega',c.localEnt,'w')}</div>`:'';
   const oldAv=()=>'<table class="av">'+Object.entries(REG).map(([k,n])=>{const a=(c.av||{})[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('')+'</table>';
   const kind=marksKind(c.marks),desc=c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:'';
-  const dmg=!c.marks?oldAv():kind==='views'?`<div style="max-width:600px;margin:0 auto">${carViews(c.marks)}</div>`+desc:`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${desc}`;
+  const dmg=!c.marks?oldAv():kind==='views'?`<div style="max-width:500px;margin:0 auto">${carViews(c.marks)}</div>`+desc:`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${desc}`;
   const acs=Object.entries(ACS).filter(([k])=>c.ac[k]).map(([k,n])=>`<div class="f"><small>${n}:</small>${{S:'Sim',N:'Não',A:'Avariado'}[c.ac[k]]}</div>`).join('');
   return `<div class="ck"><div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
-  <h3>Veículo</h3><div class="g g3 gi">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}</div>
-  <h3>Pneus, documento e limpeza</h3><div class="g g3 gi">${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
+  ${info}
+  <h3>Veículo, pneus e documento</h3><div class="g g3 gi">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${Fo('Marca',c.marca)}${Fo('Ano',c.ano)}${Fo('Cor',c.cor)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}${Fo('Proprietário',c.prop)}${Fo('Telefone',c.propTel)}${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
   <h3>Avarias</h3>${dmg}
   ${acs?`<h3>Acessórios</h3><div class="g g4 gi">${acs}</div>`:''}
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
-  <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
-  <div><img src="${c.sigMot||'signature.png'}" alt=""><div style="border-top:1px solid #111"></div>Motorista<br>${esc(c.motNome)}</div></div>
+  <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111;width:100%;margin:2px 0 3px"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
+  <div><img src="${c.sigMot||'signature.png'}" alt=""><div style="border-top:1px solid #111;width:100%;margin:2px 0 3px"></div>Motorista<br>${esc(c.motNome)}</div></div>
+  <p class="nota">Não nos responsabilizamos por pertences deixados no interior do veículo.</p>
   <div class="foot">${CO.nome} · ${C.tel} · CNPJ ${C.cnpj}${C.addr?' · '+esc(C.addr):''}</div></div>`;
 }
 
@@ -659,7 +685,7 @@ async function docToPdf(){
   await Promise.all([...clone.querySelectorAll('img')].map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));
   let canvas;try{canvas=await html2canvas(clone,{scale:2,backgroundColor:'#fff'})}finally{holder.remove()}
   const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),W=210,H=297,imgH=canvas.height*W/canvas.width;
-  if(imgH<=H*1.5){ // uma página: reduz para caber, centralizado
+  if(imgH<=H*2.2){ // uma página: reduz para caber, centralizado
     const k=Math.min(1,H/imgH),w=W*k,hh=imgH*k;
     pdf.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',(W-w)/2,0,w,hh);
   }else{
@@ -761,7 +787,7 @@ function suggest(input,pick){
   input.addEventListener('blur',()=>setTimeout(close,200));
 }
 (()=>{const f=$('#fR');const fill=c=>{f.client.value=c.nome;f.doc.value=c.doc;f.phone.value=c.phone;f.addr.value=c.addr};suggest(f.client,fill);suggest(f.phone,fill);
-  const g=$('#fC');suggest(g.entNome,c=>{g.entNome.value=c.nome;g.entTel.value=c.phone})})();
+  const g=$('#fC');suggest(g.entNome,c=>{g.entNome.value=c.nome;g.entTel.value=c.phone});suggest(g.prop,c=>{g.prop.value=c.nome;g.propTel.value=c.phone})})();
 
 /* ---------- atualização via GitHub ---------- */
 let updShown='';
