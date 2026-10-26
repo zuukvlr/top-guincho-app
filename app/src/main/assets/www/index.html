@@ -52,6 +52,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 .reg .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
 #acs{display:grid;grid-template-columns:1fr;gap:8px}
 .ac input{width:22px;height:22px;flex:none;margin:0;accent-color:var(--red)}
+.ac .nm{flex:1}
+.ac .sn{display:flex;gap:16px}
+.ac .sn label{display:flex;align-items:center;gap:6px;margin:0;font-size:14px;color:var(--white);font-weight:500}
 .ac{display:flex;flex-direction:row;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#141414;font-size:13px}
 .pad{position:relative;background:#fff;border-radius:10px;margin-top:4px}
 .pad canvas{width:100%;height:140px;display:block;touch-action:none}
@@ -285,7 +288,7 @@ nav.bar button{font-size:11px}
         </div>
         <label>Descrição das avarias <span class="muted">(opcional)</span></label><input name="avObs" maxlength="300" placeholder="Ex.: amassado na porta dianteira direita">
       </div>
-      <div class="card"><h2>Acessórios</h2><p class="muted" style="margin:0 0 8px">Marque os itens que estão no veículo.</p><div id="acs"></div></div>
+      <div class="card"><h2>Acessórios</h2><p class="muted" style="margin:0 0 8px">Para cada item, marque Sim ou Não.</p><div id="acs"></div></div>
       <div class="card"><h2>Observações</h2><input name="obs" maxlength="400" placeholder="Opcional"></div>
       <div class="card"><h2>Assinaturas</h2>
         <label>Cliente — nome <span class="muted">(digite para buscar)</span></label><input name="entNome" maxlength="80" autocomplete="off">
@@ -614,10 +617,11 @@ function initCheck(){
   if(!$('#pneus').children.length){
     $('#pneus').innerHTML=[['diant','Dianteiros'],['tras','Traseiros'],['estepe','Estepe']].map(([k,n])=>`<div><label>${n}</label><select name="pn_${k}"><option value="">—</option><option value="bom">Bom</option><option value="medio">Médio</option><option value="ruim">Ruim</option></select></div>`).join('');
     $('#comb').innerHTML=['E','1/4','1/2','3/4','F'].map(c=>`<label class="chip"><input type="radio" name="comb" value="${c}"><span>${c}</span></label>`).join('');
-    $('#acs').innerHTML=Object.entries(ACS2).map(([k,n])=>`<label class="ac"><input type="checkbox" name="acc_${k}"><span>${n}</span></label>`).join('');
+    $('#acs').innerHTML=Object.entries(ACS2).map(([k,n])=>`<div class="ac"><span class="nm">${n}</span><div class="sn"><label><input type="checkbox" name="acs_${k}" value="S" onchange="snPick(this)"> Sim</label><label><input type="checkbox" name="acs_${k}" value="N" onchange="snPick(this)"> Não</label></div></div>`).join('');
   }
   setupPad('ent');renderDmg();
 }
+function snPick(cb){if(cb.checked)$$(`[name="${cb.name}"]`).forEach(x=>{if(x!==cb)x.checked=false})}
 function toggleRadio(r){if(r.dataset.was==='1'){r.checked=false;r.dataset.was='0'}else{$$(`[name="${r.name}"]`).forEach(x=>x.dataset.was='0');r.dataset.was='1'}}
 function setupPad(k){
   const c=$('#p_'+k);if(pads[k])return;const ratio=2,w=c.clientWidth||300;c.width=w*ratio;c.height=140*ratio;
@@ -636,10 +640,10 @@ function padData(k){const p=pads[k];if(!p||!p.dirty)return'';
 async function saveChecklist(e){
   e.preventDefault();const f=e.target,pick=n=>(f.querySelector(`[name="${n}"]:checked`)||{}).value||'';
   const btn=f.querySelector('[type=submit]');btn.disabled=true;const id=await nextId('checklists');
-  const acc=Object.keys(ACS2).filter(k=>f.querySelector(`[name="acc_${k}"]`).checked);
+  const acs={};Object.keys(ACS2).forEach(k=>{const x=f.querySelector(`[name="acs_${k}"]:checked`);if(x)acs[k]=x.value});
   const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
     sinistro:f.sinistro.value.trim(),empresa:f.empresa.value.trim(),cia:f.cia.value.trim(),func:f.func.value.trim(),guincho:pick('guincho'),localRem:f.localRem.value.trim(),localEnt:f.localEnt.value.trim(),marca:f.marca.value.trim(),ano:f.ano.value.trim(),cor:f.cor.value.trim(),prop:f.prop.value.trim(),propTel:f.propTel.value.trim(),
-    pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),marks:marks.map(m=>({...m})),avObs:f.avObs.value.trim(),acc,obs:f.obs.value.trim(),
+    pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),marks:marks.map(m=>({...m})),avObs:f.avObs.value.trim(),acs,obs:f.obs.value.trim(),
     entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
   c.co=coSnap();checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');marks=[];renderDmg();openDoc('c',id);return false;
 }
@@ -654,13 +658,14 @@ function checkDoc(c){
   const oldAv=()=>'<table class="av">'+Object.entries(REG).map(([k,n])=>{const a=(c.av||{})[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('')+'</table>';
   const kind=marksKind(c.marks),desc=c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:'';
   const dmg=!c.marks?oldAv():kind==='views'?`<div style="max-width:500px;margin:0 auto">${carViews(c.marks)}</div>`+desc:`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${desc}`;
-  const acs=c.acc?Object.entries(ACS2).map(([k,n])=>`<div class="f">${bx(c.acc.includes(k))}${n}</div>`).join(''):Object.entries(ACS).filter(([k])=>(c.ac||{})[k]).map(([k,n])=>`<div class="f"><small>${n}:</small>${{S:'Sim',N:'Não',A:'Avariado'}[c.ac[k]]}</div>`).join('');
+  const accRow=(n,v)=>`<div class="f" style="display:flex;justify-content:space-between;align-items:center"><span>${n}</span><span style="white-space:nowrap">${bx(v==='S')}Sim&nbsp;&nbsp;&nbsp;${bx(v==='N')}Não</span></div>`;
+  const acs=c.acs?Object.entries(ACS2).map(([k,n])=>accRow(n,c.acs[k])).join(''):c.acc?Object.entries(ACS2).map(([k,n])=>accRow(n,c.acc.includes(k)?'S':'N')).join(''):Object.entries(ACS).filter(([k])=>(c.ac||{})[k]).map(([k,n])=>`<div class="f"><small>${n}:</small>${{S:'Sim',N:'Não',A:'Avariado'}[c.ac[k]]}</div>`).join('');
   return `<div class="ck"><div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
   ${info}
   <h3>Veículo, pneus e documento</h3><div class="g g3 gi">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${Fo('Marca',c.marca)}${Fo('Ano',c.ano)}${Fo('Cor',c.cor)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}${Fo('Proprietário',c.prop)}${Fo('Telefone',c.propTel)}${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
   <h3>Avarias</h3>${dmg}
-  ${acs?`<h3>Acessórios</h3><div class="g g1 gi">${acs}</div>`:''}
+  ${acs?`<h3>Acessórios</h3><div class="g g1 gi" style="max-width:340px">${acs}</div>`:''}
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
   <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111;width:100%;margin:2px 0 3px"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
   <div><img src="${c.sigMot||'signature.png'}" alt=""><div style="border-top:1px solid #111;width:100%;margin:2px 0 3px"></div>Motorista<br>${esc(c.motNome)}</div></div>
