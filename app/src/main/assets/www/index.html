@@ -73,6 +73,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 #updModal .notes{color:var(--mut);font-size:13px;margin:6px 0 0;white-space:pre-line;max-height:110px;overflow:auto}
 #updModal .pb{height:6px;background:#333;border-radius:3px;margin-top:14px;overflow:hidden;display:none}
 #updModal .pb i{display:block;height:100%;width:0;background:var(--red)}
+.dmgbox{background:#fff;border-radius:12px;padding:6px;margin-top:10px;touch-action:manipulation}
+.dmgbox svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:12px;margin-top:6px;color:#222}
+.legend i{font-style:normal;font-weight:900;color:#e10600;margin-right:4px}
 .sugg{background:#222;border:1px solid var(--red);border-radius:10px;margin-top:4px;overflow:hidden}
 .sugg div{padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
 .sugg div:last-child{border:0}.sugg small{color:var(--mut);display:block}
@@ -238,7 +242,21 @@ nav.bar button{font-size:11px}
         <label>Entregue excessivamente sujo?</label>
         <div class="chips"><label class="chip"><input type="radio" name="sujo" value="sim"><span>Sim</span></label><label class="chip"><input type="radio" name="sujo" value="nao"><span>Não</span></label></div>
       </div>
-      <div class="card"><h2>Avarias por região</h2><div id="regs"></div></div>
+      <div class="card"><h2>Avarias</h2>
+        <p class="muted" style="margin:0 0 8px">Escolha o tipo e toque no desenho onde está a avaria. Toque numa marca para removê-la.</p>
+        <div class="chips" id="dmgTools">
+          <label class="chip"><input type="radio" name="dtool" value="X" checked><span>X Batido</span></label>
+          <label class="chip"><input type="radio" name="dtool" value="-"><span>– Riscado</span></label>
+          <label class="chip"><input type="radio" name="dtool" value="O"><span>O Quebrado</span></label>
+        </div>
+        <div class="dmgbox" id="dmgBox"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button type="button" class="btn ghost sm" onclick="dmgUndo()">Desfazer</button>
+          <button type="button" class="btn ghost sm" onclick="dmgClear()">Limpar tudo</button>
+          <span class="muted" id="dmgCount" style="margin-left:auto;align-self:center"></span>
+        </div>
+        <label>Descrição das avarias <span class="muted">(opcional)</span></label><input name="avObs" maxlength="300" placeholder="Ex.: amassado na porta dianteira direita">
+      </div>
       <div class="card"><h2>Acessórios</h2><p class="muted" style="margin:0 0 6px">S = existe · N = não existe · A = avariado</p><div id="acs"></div></div>
       <div class="card"><h2>Observações</h2><input name="obs" maxlength="400" placeholder="Opcional"></div>
       <div class="card"><h2>Assinaturas</h2>
@@ -475,6 +493,64 @@ function receiptDoc(r){
   <div class="foot">${CO.nome} · ${C.tel} · CNPJ ${C.cnpj}${C.addr?' · '+esc(C.addr):''}</div>`;
 }
 
+/* ---------- mapa de avarias (desenho do veículo) ---------- */
+const CAR_STROKE='#222';
+function carSide(x,y,flip){
+  const g=flip?`translate(${x+380},${y}) scale(-1,1)`:`translate(${x},${y})`;
+  return `<g transform="${g}" fill="#fff" stroke="${CAR_STROKE}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M8 108 L8 84 Q8 73 22 70 L88 60 L128 28 Q134 20 146 20 L246 20 Q262 20 272 29 L310 60 L350 66 Q372 70 372 86 L372 108 Z"/>
+    <path d="M98 58 L134 31 L196 31 L196 58 Z"/><path d="M204 31 L250 31 Q258 31 264 37 L292 58 L204 58 Z"/>
+    <path d="M200 58 L200 106 M170 72 L184 72 M226 72 L240 72" fill="none"/>
+    <rect x="10" y="76" width="16" height="8" rx="3"/><rect x="358" y="76" width="12" height="8" rx="3"/>
+    <circle cx="82" cy="108" r="29"/><circle cx="82" cy="108" r="13"/><circle cx="298" cy="108" r="29"/><circle cx="298" cy="108" r="13"/></g>`;
+}
+function carFront(x,y,rear){
+  return `<g transform="translate(${x},${y})" fill="#fff" stroke="${CAR_STROKE}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="14" y="108" width="28" height="34" rx="6" fill="#222"/><rect x="178" y="108" width="28" height="34" rx="6" fill="#222"/>
+    <path d="M14 106 L14 76 Q14 65 26 61 L50 30 Q56 22 68 22 L152 22 Q164 22 170 30 L194 61 Q206 65 206 76 L206 106 Z"/>
+    <path d="${rear?'M64 34 L156 34 L170 58 L50 58 Z':'M60 34 L160 34 L178 58 L42 58 Z'}"/>
+    <rect x="22" y="70" width="${rear?40:34}" height="14" rx="4"/><rect x="${rear?158:164}" y="70" width="${rear?40:34}" height="14" rx="4"/>
+    ${rear?'<rect x="86" y="82" width="48" height="16" rx="3"/>':'<rect x="76" y="74" width="68" height="14" rx="3"/><path d="M84 74 L84 88 M96 74 L96 88 M108 74 L108 88 M120 74 L120 88 M132 74 L132 88" fill="none"/><rect x="92" y="92" width="36" height="9" rx="2"/>'}
+    <path d="M14 98 L206 98" fill="none"/><rect x="26" y="52" width="12" height="8" rx="2"/><rect x="182" y="52" width="12" height="8" rx="2"/></g>`;
+}
+function carTop(x,y){
+  return `<g transform="translate(${x},${y})" fill="#fff" stroke="${CAR_STROKE}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="50" y="10" width="50" height="14" rx="4" fill="#222"/><rect x="50" y="126" width="50" height="14" rx="4" fill="#222"/>
+    <rect x="240" y="10" width="50" height="14" rx="4" fill="#222"/><rect x="240" y="126" width="50" height="14" rx="4" fill="#222"/>
+    <path d="M16 75 Q16 28 62 22 L278 22 Q324 28 324 75 Q324 122 278 128 L62 128 Q16 122 16 75 Z"/>
+    <path d="M108 38 L142 42 L142 108 L108 112 Z"/><rect x="142" y="42" width="76" height="66" rx="8"/><path d="M218 42 L248 38 L248 112 L218 108 Z"/>
+    <ellipse cx="116" cy="20" rx="9" ry="4"/><ellipse cx="116" cy="130" rx="9" ry="4"/></g>`;
+}
+const dmgLabel=(x,y,t)=>`<text x="${x}" y="${y}" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#777" text-anchor="middle">${t}</text>`;
+function markSvg(m){
+  const c='#e10600',w=4.5,p=`transform="translate(${m.x},${m.y})" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"`;
+  return m.t==='X'?`<path ${p} d="M-9 -9 L9 9 M9 -9 L-9 9"/>`:m.t==='-'?`<path ${p} d="M-11 0 L11 0"/>`:`<circle ${p} cx="0" cy="0" r="10"/>`;
+}
+function carSvg(marks){
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" width="640" height="560" style="display:block;width:100%;height:auto;background:#fff">
+    ${dmgLabel(200,16,'LATERAL ESQUERDA')}${carSide(10,24,false)}
+    ${dmgLabel(520,16,'FRENTE')}${carFront(410,24,false)}
+    ${dmgLabel(200,206,'LATERAL DIREITA')}${carSide(10,214,true)}
+    ${dmgLabel(520,206,'TRASEIRA')}${carFront(410,214,true)}
+    ${dmgLabel(320,396,'TOPO')}${carTop(150,404)}
+    ${(marks||[]).map(markSvg).join('')}</svg>`;
+}
+const legendHTML=m=>{const n=t=>(m||[]).filter(x=>x.t===t).length;return `<div class="legend"><span><i>X</i>Batido (${n('X')})</span><span><i>–</i>Riscado (${n('-')})</span><span><i>O</i>Quebrado (${n('O')})</span></div>`};
+let marks=[];
+function renderDmg(){const b=$('#dmgBox');if(!b)return;b.innerHTML=carSvg(marks);$('#dmgCount').textContent=marks.length?marks.length+' marca(s)':''}
+function dmgUndo(){marks.pop();renderDmg()}
+function dmgClear(){if(marks.length&&!confirm('Remover todas as marcas?'))return;marks=[];renderDmg()}
+(()=>{const b=$('#dmgBox');if(!b)return;
+  b.addEventListener('click',e=>{
+    const svg=b.querySelector('svg');if(!svg)return;
+    const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(svg.getScreenCTM().inverse());
+    const hit=marks.findIndex(m=>Math.hypot(m.x-q.x,m.y-q.y)<16);
+    if(hit>=0)marks.splice(hit,1);
+    else marks.push({x:Math.round(q.x),y:Math.round(q.y),t:($('input[name=dtool]:checked')||{}).value||'X'});
+    renderDmg();
+  });
+})();
+
 /* ---------- checklist ---------- */
 const pads={};
 function initCheck(){
@@ -483,14 +559,10 @@ function initCheck(){
   if(!$('#pneus').children.length){
     $('#pneus').innerHTML=[['diant','Dianteiros'],['tras','Traseiros'],['estepe','Estepe']].map(([k,n])=>`<div><label>${n}</label><select name="pn_${k}"><option value="">—</option><option value="bom">Bom</option><option value="medio">Médio</option><option value="ruim">Ruim</option></select></div>`).join('');
     $('#comb').innerHTML=['E','1/4','1/2','3/4','F'].map(c=>`<label class="chip"><input type="radio" name="comb" value="${c}"><span>${c}</span></label>`).join('');
-    $('#regs').innerHTML=Object.entries(REG).map(([k,n])=>`<div class="reg" data-r="${k}"><div class="top"><b>${n}</b><label class="chip" style="margin:0"><input type="checkbox" data-ok checked onchange="regOk(this)"><span>Sem avarias</span></label></div>
-      <div class="chips dmg" style="margin-top:8px;display:none">${Object.entries(TIPOS).map(([t,tn])=>`<label class="chip"><input type="checkbox" data-t="${t}"><span>${tn}</span></label>`).join('')}</div>
-      <input data-x placeholder="Onde? Ex.: porta dianteira" maxlength="200" style="display:none;margin-top:8px"></div>`).join('');
     $('#acs').innerHTML=Object.entries(ACS).map(([k,n])=>`<div class="ac"><span>${n}</span><div class="chips">${['S','N','A'].map(o=>`<label class="chip xs"><input type="radio" name="ac_${k}" value="${o}" onclick="toggleRadio(this)"><span>${o}</span></label>`).join('')}</div></div>`).join('');
   }
-  setupPad('ent');
+  setupPad('ent');renderDmg();
 }
-function regOk(cb){const r=cb.closest('.reg');r.querySelector('.dmg').style.display=r.querySelector('[data-x]').style.display=cb.checked?'none':'block'}
 function toggleRadio(r){if(r.dataset.was==='1'){r.checked=false;r.dataset.was='0'}else{$$(`[name="${r.name}"]`).forEach(x=>x.dataset.was='0');r.dataset.was='1'}}
 function setupPad(k){
   const c=$('#p_'+k);if(pads[k])return;const ratio=2,w=c.clientWidth||300;c.width=w*ratio;c.height=140*ratio;
@@ -509,24 +581,24 @@ function padData(k){const p=pads[k];if(!p||!p.dirty)return'';
 async function saveChecklist(e){
   e.preventDefault();const f=e.target,pick=n=>(f.querySelector(`[name="${n}"]:checked`)||{}).value||'';
   const btn=f.querySelector('[type=submit]');btn.disabled=true;const id=await nextId('checklists');
-  const av={};$$('#regs .reg').forEach(r=>{av[r.dataset.r]={ok:r.querySelector('[data-ok]').checked,tipos:[...r.querySelectorAll('[data-t]:checked')].map(i=>i.dataset.t),texto:r.querySelector('[data-x]').value.trim()}});
   const ac={};Object.keys(ACS).forEach(k=>{const v=pick('ac_'+k);if(v)ac[k]=v});
   const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
-    pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),av,ac,obs:f.obs.value.trim(),
+    pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),marks:marks.map(m=>({...m})),avObs:f.avObs.value.trim(),ac,obs:f.obs.value.trim(),
     entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
-  c.co=coSnap();checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');$$('#regs [data-ok]').forEach(regOk);openDoc('c',id);return false;
+  c.co=coSnap();checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');marks=[];renderDmg();openDoc('c',id);return false;
 }
 function checkDoc(c){
   const C=c.co||CO;
   const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
   const F=(l,v)=>`<div class="f"><small>${l}</small>${esc(v)||'—'}</div>`;
-  const avs=Object.entries(REG).map(([k,n])=>{const a=c.av[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('');
+  const oldAv=()=>'<table class="av">'+Object.entries(REG).map(([k,n])=>{const a=(c.av||{})[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('')+'</table>';
+  const dmg=c.marks?`<div style="max-width:470px;margin:4px auto 0">${carSvg(c.marks)}</div>${legendHTML(c.marks)}${c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:''}`:oldAv();
   const acs=Object.entries(ACS).filter(([k])=>c.ac[k]).map(([k,n])=>`<tr><td>${n}</td><td style="text-align:left">${{S:'Sim',N:'Não existe',A:'Avariado'}[c.ac[k]]}</td></tr>`).join('');
   return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
   <h3>Veículo</h3><div class="g">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}</div>
   <h3>Pneus, documento e limpeza</h3><div class="g">${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
-  <h3>Avarias</h3><table class="av">${avs}</table>
+  <h3>Avarias</h3>${dmg}
   ${acs?`<h3>Acessórios</h3><table class="av">${acs}</table>`:''}
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
   <div class="sg3"><div>${c.sigEnt?`<img src="${c.sigEnt}">`:'<div style="height:50px"></div>'}<div class="ln" style="border-top:1px solid #111"></div>Cliente<br>${esc(c.entNome)} ${esc(c.entTel)}</div>
