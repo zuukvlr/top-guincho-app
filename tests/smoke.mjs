@@ -168,21 +168,21 @@ check(semVeiculo.valido && semVeiculo.doc, 'recibo pode ser emitido sem veículo
 // mapa de avarias: marcar X / – / O por toque, remover tocando na marca, sair no documento e no PDF
 await page.evaluate(() => { document.querySelector('#login').style.display = 'none'; go('check'); });
 await page.locator('#dmgBox').scrollIntoViewIfNeeded();
-const bx = await page.locator('#dmgBox svg').boundingBox();
-const at = (x, y) => [bx.x + x / 640 * bx.width, bx.y + y / 560 * bx.height];
+const bx = await page.locator('#dmgBox img').boundingBox();
+const at = (x, y) => [bx.x + x * bx.width, bx.y + y * bx.height];
 const tap = async (tool, x, y) => { await page.locator(`input[name=dtool][value="${tool}"]`).check({ force: true }); const [px, py] = at(x, y); await page.mouse.click(px, py); };
-await tap('X', 120, 70); await tap('-', 200, 110); await tap('O', 480, 80);
+await tap('X', 0.2, 0.1); await tap('-', 0.4, 0.15); await tap('O', 0.8, 0.4);
 check(await page.evaluate(() => marks.map(m => m.t).join('')) === 'X-O', 'toque no desenho cria marcas X, – e O');
-const [rx, ry] = at(200, 110); await page.mouse.click(rx, ry);
+const [rx, ry] = at(0.4, 0.15); await page.mouse.click(rx, ry);
 check(await page.evaluate(() => marks.length) === 2, 'tocar numa marca existente remove a marca');
 const dmg = await page.evaluate(async () => {
   const c = document.querySelector('#fC'); c.modelo.value = 'Palio Marcas'; c.avObs.value = 'Amassado na porta';
   await saveChecklist({ preventDefault() {}, target: c });
   const d = document.querySelector('#doc');
   const b64 = await docToPdf();
-  return { svg: !!d.querySelector('svg'), x: d.querySelectorAll('svg path[stroke="#e10600"], svg circle[stroke="#e10600"]').length, leg: /Batido \(1\)/.test(d.innerText) && /Quebrado \(1\)/.test(d.innerText), obs: d.innerText.includes('Amassado na porta'), zerou: marks.length === 0, pdf: b64.length > 1000 };
+  return { x: d.querySelectorAll('.carmap > div').length, img: !!d.querySelector('.carmap img[src="carro.jpg"]'), leg: /Batido \(1\)/.test(d.innerText) && /Quebrado \(1\)/.test(d.innerText), obs: d.innerText.includes('Amassado na porta'), zerou: marks.length === 0, pdf: b64.length > 1000 };
 });
-check(dmg.svg && dmg.x === 2 && dmg.leg && dmg.obs, 'documento do checklist mostra o desenho, as marcas, a legenda e a descrição');
+check(dmg.img && dmg.x === 2 && dmg.leg && dmg.obs, 'documento do checklist mostra o desenho, as marcas, a legenda e a descrição');
 check(dmg.zerou && dmg.pdf, 'marcas zeram após salvar e o PDF do checklist é gerado');
 
 await browser.close();

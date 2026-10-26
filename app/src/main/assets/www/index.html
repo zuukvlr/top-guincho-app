@@ -74,7 +74,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
 #updModal .pb{height:6px;background:#333;border-radius:3px;margin-top:14px;overflow:hidden;display:none}
 #updModal .pb i{display:block;height:100%;width:0;background:var(--red)}
 .dmgbox{background:#fff;border-radius:12px;padding:6px;margin-top:10px;touch-action:manipulation}
-.dmgbox svg{display:block;width:100%;height:auto}
+.dmgbox>svg{display:block;width:100%;height:auto}
 .legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;font-size:12px;margin-top:6px;color:#222}
 .legend i{font-style:normal;font-weight:900;color:#e10600;margin-right:4px}
 .sugg{background:#222;border:1px solid var(--red);border-radius:10px;margin-top:4px;overflow:hidden}
@@ -536,17 +536,26 @@ function carSvg(marks){
     ${(marks||[]).map(markSvg).join('')}</svg>`;
 }
 const legendHTML=m=>{const n=t=>(m||[]).filter(x=>x.t===t).length;return `<div class="legend"><span><i>X</i>Batido (${n('X')})</span><span><i>–</i>Riscado (${n('-')})</span><span><i>O</i>Quebrado (${n('O')})</span></div>`};
+const MK='#e10600',bar=(css)=>`<i style="position:absolute;background:${MK};border-radius:3px;${css}"></i>`;
+const markInner=t=>t==='X'?bar('left:44%;top:-8%;width:12%;height:116%;transform:rotate(45deg)')+bar('left:44%;top:-8%;width:12%;height:116%;transform:rotate(-45deg)'):t==='-'?bar('left:-8%;top:43%;width:116%;height:14%'):`<i style="position:absolute;left:0;top:0;right:0;bottom:0;border:3px solid ${MK};border-radius:50%;box-sizing:border-box"></i>`;
+/* marcas novas (u:1) ficam sobre a foto do veículo; as antigas (desenho v1.0.17) continuam no desenho antigo.
+   Marcas em HTML/CSS (e não SVG) para o PDF desenhá-las sempre. */
+function carHTML(ms){
+  ms=ms||[];if(ms.some(m=>!m.u))return carSvg(ms);
+  return `<div class="carmap" style="position:relative"><img src="carro.jpg" alt="" style="display:block;width:100%;height:auto">${ms.map(m=>`<div style="position:absolute;left:${(m.x*100).toFixed(2)}%;top:${(m.y*100).toFixed(2)}%;width:7%;padding-top:7%;transform:translate(-50%,-50%)">${markInner(m.t)}</div>`).join('')}</div>`;
+}
 let marks=[];
-function renderDmg(){const b=$('#dmgBox');if(!b)return;b.innerHTML=carSvg(marks);$('#dmgCount').textContent=marks.length?marks.length+' marca(s)':''}
+function renderDmg(){const b=$('#dmgBox');if(!b)return;b.innerHTML=carHTML(marks);$('#dmgCount').textContent=marks.length?marks.length+' marca(s)':''}
 function dmgUndo(){marks.pop();renderDmg()}
 function dmgClear(){if(marks.length&&!confirm('Remover todas as marcas?'))return;marks=[];renderDmg()}
 (()=>{const b=$('#dmgBox');if(!b)return;
   b.addEventListener('click',e=>{
-    const svg=b.querySelector('svg');if(!svg)return;
-    const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const q=pt.matrixTransform(svg.getScreenCTM().inverse());
-    const hit=marks.findIndex(m=>Math.hypot(m.x-q.x,m.y-q.y)<16);
+    const im=b.querySelector('img');if(!im)return;
+    const r=im.getBoundingClientRect(),x=(e.clientX-r.left)/r.width,y=(e.clientY-r.top)/r.height;
+    if(x<0||x>1||y<0||y>1)return;
+    const hit=marks.findIndex(m=>Math.hypot((m.x-x)*r.width,(m.y-y)*r.height)<18);
     if(hit>=0)marks.splice(hit,1);
-    else marks.push({x:Math.round(q.x),y:Math.round(q.y),t:($('input[name=dtool]:checked')||{}).value||'X'});
+    else marks.push({u:1,x:+x.toFixed(4),y:+y.toFixed(4),t:($('input[name=dtool]:checked')||{}).value||'X'});
     renderDmg();
   });
 })();
@@ -592,7 +601,7 @@ function checkDoc(c){
   const PN={bom:'Bom',medio:'Médio',ruim:'Ruim'},sn=v=>v==='sim'?'Sim':v==='nao'?'Não':'—';
   const F=(l,v)=>`<div class="f"><small>${l}</small>${esc(v)||'—'}</div>`;
   const oldAv=()=>'<table class="av">'+Object.entries(REG).map(([k,n])=>{const a=(c.av||{})[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('')+'</table>';
-  const dmg=c.marks?`<div style="max-width:470px;margin:4px auto 0">${carSvg(c.marks)}</div>${legendHTML(c.marks)}${c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:''}`:oldAv();
+  const dmg=c.marks?`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:''}`:oldAv();
   const acs=Object.entries(ACS).filter(([k])=>c.ac[k]).map(([k,n])=>`<tr><td>${n}</td><td style="text-align:left">${{S:'Sim',N:'Não existe',A:'Avariado'}[c.ac[k]]}</td></tr>`).join('');
   return `<div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
