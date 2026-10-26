@@ -252,6 +252,7 @@ nav.bar button{font-size:11px}
       <div class="card"><h2>Veículo</h2>
         <div class="chips"><label class="chip"><input type="radio" name="tipo" value="usado" checked><span>Usado</span></label><label class="chip"><input type="radio" name="tipo" value="novo"><span>Novo</span></label></div>
         <div class="row"><div><label>Placa</label><input name="placa" maxlength="10" style="text-transform:uppercase"></div><div><label>KM</label><input name="km" inputmode="numeric" maxlength="12"></div></div>
+        <label>Modelo *</label><input name="modelo" required maxlength="80" placeholder="Ex.: Fiat Palio 2014 preto">
         <div class="row3"><div><label>Marca</label><input name="marca" maxlength="40"></div><div><label>Ano</label><input name="ano" inputmode="numeric" maxlength="4"></div><div><label>Cor</label><input name="cor" maxlength="30"></div></div>
         <label>Proprietário — nome <span class="muted">(digite para buscar)</span></label><input name="prop" maxlength="120" autocomplete="off">
         <label>Proprietário — telefone</label><input name="propTel" inputmode="tel" maxlength="15" data-mask="phone" placeholder="(00) 00000-0000">
@@ -473,11 +474,11 @@ function renderHome(){
 function rowHTML(o){
   if(o.t==='r'){const r=o.x,st=r.cancelado?['Cancelado','pend']:r.recv>=r.final?['Recebido','ok']:r.recv>0?['Parcial','par']:['Pendente','pend'];
     return `<div class="item" onclick="openDoc('r',${r.id})"><div class="t"><b>Recibo ${num6(r.id)} · ${esc(r.client)}</b><small>${dBR(r.issue)} · ${money(r.final)}</small></div><span class="tag ${st[1]}">${st[0]}</span></div>`}
-  const c=o.x;return `<div class="item" onclick="openDoc('c',${c.id})"><div class="t"><b>Checklist ${num6(c.id)} · ${esc(c.modelo||c.marca||c.placa||'Sem identificação')}</b><small>${dBR(c.data)}${c.placa?' · '+esc(c.placa):''}</small></div><span class="tag">Checklist</span></div>`;
+  const c=o.x;return `<div class="item" onclick="openDoc('c',${c.id})"><div class="t"><b>Checklist ${num6(c.id)} · ${esc(c.modelo)}</b><small>${dBR(c.data)}${c.placa?' · '+esc(c.placa):''}</small></div><span class="tag">Checklist</span></div>`;
 }
 function renderHist(){
   const q=($('#busca').value||'').toLowerCase(), f=(document.querySelector('[name=hf]:checked')||{}).value||'all';
-  let all=[...recibos.map(r=>({t:'r',x:r,s:(num6(r.id)+r.client+r.plate+r.vmodel).toLowerCase()})),...checks.map(c=>({t:'c',x:c,s:(num6(c.id)+(c.modelo||'')+(c.marca||'')+c.placa).toLowerCase()}))];
+  let all=[...recibos.map(r=>({t:'r',x:r,s:(num6(r.id)+r.client+r.plate+r.vmodel).toLowerCase()})),...checks.map(c=>({t:'c',x:c,s:(num6(c.id)+c.modelo+c.placa).toLowerCase()}))];
   all=all.filter(o=>(f==='all'||o.t===f)&&o.s.includes(q)).sort((a,b)=>b.x.ts-a.x.ts);
   $('#histList').innerHTML=all.length?all.map(rowHTML).join(''):'<p class="muted">Nada encontrado.</p>';
 }
@@ -635,7 +636,7 @@ async function saveChecklist(e){
   e.preventDefault();const f=e.target,pick=n=>(f.querySelector(`[name="${n}"]:checked`)||{}).value||'';
   const btn=f.querySelector('[type=submit]');btn.disabled=true;const id=await nextId('checklists');
   const ac={};Object.keys(ACS).forEach(k=>{const v=pick('ac_'+k);if(v)ac[k]=v});
-  const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,uf:f.uf.value.trim(),
+  const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
     sinistro:f.sinistro.value.trim(),empresa:f.empresa.value.trim(),cia:f.cia.value.trim(),func:f.func.value.trim(),guincho:pick('guincho'),localRem:f.localRem.value.trim(),localEnt:f.localEnt.value.trim(),marca:f.marca.value.trim(),ano:f.ano.value.trim(),cor:f.cor.value.trim(),prop:f.prop.value.trim(),propTel:f.propTel.value.trim(),
     pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),marks:marks.map(m=>({...m})),avObs:f.avObs.value.trim(),ac,obs:f.obs.value.trim(),
     entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
@@ -656,7 +657,7 @@ function checkDoc(c){
   return `<div class="ck"><div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
   <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
   ${info}
-  <h3>Veículo, pneus e documento</h3><div class="g g3 gi">${F('Placa',c.placa)}${F('Marca',c.marca)}${Fo('Modelo',c.modelo)}${F('Tipo',c.tipo)}${Fo('Ano',c.ano)}${Fo('Cor',c.cor)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}${Fo('Proprietário',c.prop)}${Fo('Telefone',c.propTel)}${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
+  <h3>Veículo, pneus e documento</h3><div class="g g3 gi">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${Fo('Marca',c.marca)}${Fo('Ano',c.ano)}${Fo('Cor',c.cor)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}${Fo('Proprietário',c.prop)}${Fo('Telefone',c.propTel)}${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
   <h3>Avarias</h3>${dmg}
   ${acs?`<h3>Acessórios</h3><div class="g g4 gi">${acs}</div>`:''}
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
@@ -699,7 +700,7 @@ async function docToPdf(){
 }
 async function sharePdf(whats){
   const o=curDoc.o,isR=curDoc.t==='r',name=(isR?'Recibo-':'Checklist-')+num6(o.id);
-  const txt=isR?`Olá, ${o.client}! Segue o recibo ${num6(o.id)} da ${CO.nome} no valor de ${money(o.final)}. Obrigado!`:`Olá! Segue o checklist ${num6(o.id)} ${[o.marca,o.modelo,o.placa].filter(Boolean).length?'do veículo '+[o.marca,o.modelo,o.placa].filter(Boolean).join(' '):'de vistoria'} - ${CO.nome}.`;
+  const txt=isR?`Olá, ${o.client}! Segue o recibo ${num6(o.id)} da ${CO.nome} no valor de ${money(o.final)}. Obrigado!`:`Olá! Segue o checklist ${num6(o.id)} do veículo ${o.modelo} - ${CO.nome}.`;
   const phone=whats?((isR?o.phone:o.entTel)||''):'';
   try{
     const b64=await docToPdf();

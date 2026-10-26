@@ -75,7 +75,7 @@ const flow = await page.evaluate(async () => {
   const b64 = await docToPdf();
   r.paginas = (atob(b64).match(/\/Type\s*\/Page\b/g) || []).length;
   // checklist
-  go('check'); const c = document.querySelector('#fC'); c.marca.value = 'Fiat';
+  go('check'); const c = document.querySelector('#fC'); c.modelo.value = 'Palio';
   await saveChecklist({ preventDefault() {}, target: c });
   r.check = document.querySelector('#doc').innerText.includes('CHECKLIST Nº 000001');
   r.clientes = clientes.length;
@@ -157,10 +157,6 @@ check(await page.locator('#svcList .svc input').last().inputValue() === 'Serviç
 const semFicha = await page.evaluate(() => { openDoc('c', 1); const tx = document.querySelector('#doc').innerText; return !/DADOS DA VISTORIA/i.test(tx) && /pertences/.test(tx); });
 check(semFicha, 'checklist sem os campos opcionais não mostra a seção "Dados da vistoria" (mas mantém a observação final)');
 
-const semModelo = await page.evaluate(async () => { go('check'); const c = document.querySelector('#fC'); const v = c.checkValidity(); const ids = checks.length;
-  await saveChecklist({ preventDefault() {}, target: c }); return { v, novo: checks.length === ids + 1, modeloField: !!c.querySelector('[name=modelo]') }; });
-check(semModelo.v && semModelo.novo && !semModelo.modeloField, 'checklist não tem mais o campo Modelo e pode ser gerado sem ele');
-
 // veículo e marca/modelo são opcionais: o recibo sai sem eles
 const semVeiculo = await page.evaluate(async () => {
   go('recibo'); const g = document.querySelector('#fR');
@@ -183,7 +179,7 @@ check(await page.evaluate(() => marks.map(m => m.t).join('')) === 'X-O', 'toque 
 const [rx, ry] = at(0.4, 0.15); await page.mouse.click(rx, ry);
 check(await page.evaluate(() => marks.length) === 2, 'tocar numa marca existente remove a marca');
 const dmg = await page.evaluate(async () => {
-  const c = document.querySelector('#fC'); c.marca.value = 'Fiat Marcas'; c.avObs.value = 'Amassado na porta';
+  const c = document.querySelector('#fC'); c.modelo.value = 'Palio Marcas'; c.avObs.value = 'Amassado na porta';
   document.querySelectorAll('#acs input[value=S]').forEach(r => r.checked = true); // todos os 20 acessórios
   Object.entries({ sinistro: '12345', empresa: 'Locadora Alfa', func: 'Carlos', cia: 'Seguradora Beta', localRem: 'Av. Brasil, 100, Chapada', localEnt: 'Oficina Central, Manaus', marca: 'Fiat', ano: '2014', cor: 'Preto', prop: 'Maria Souza', propTel: '(92) 99999-8888', obs: 'Veículo entregue no pátio.', entNome: 'Cliente Teste', entTel: '(92) 98888-7777' }).forEach(([k, v]) => c[k].value = v);
   c.querySelector('input[name=guincho][value=asa_delta]').checked = true;
