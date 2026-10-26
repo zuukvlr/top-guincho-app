@@ -155,6 +155,8 @@ await page.locator('#svcList .svc .ok').last().click();
 check(await page.locator('#svcList .svc input').last().inputValue() === 'Serviço renomeado', 'editar tipo de serviço mantém o novo nome na lista');
 
 const semFicha = await page.evaluate(() => { openDoc('c', 1); const tx = document.querySelector('#doc').innerText; return !/DADOS DA VISTORIA/i.test(tx) && /pertences/.test(tx); });
+const acVazio = await page.evaluate(() => { openDoc('c', 1); const g = document.querySelector('#doc .g1'); return g.querySelectorAll('.bx').length === 13 && g.querySelectorAll('.bx b').length === 0; });
+check(acVazio, 'acessórios não marcados aparecem com caixa vazia');
 check(semFicha, 'checklist sem os campos opcionais não mostra a seção "Dados da vistoria" (mas mantém a observação final)');
 
 // veículo e marca/modelo são opcionais: o recibo sai sem eles
@@ -180,7 +182,8 @@ const [rx, ry] = at(0.4, 0.15); await page.mouse.click(rx, ry);
 check(await page.evaluate(() => marks.length) === 2, 'tocar numa marca existente remove a marca');
 const dmg = await page.evaluate(async () => {
   const c = document.querySelector('#fC'); c.modelo.value = 'Palio Marcas'; c.avObs.value = 'Amassado na porta';
-  document.querySelectorAll('#acs input[value=S]').forEach(r => r.checked = true); // todos os 20 acessórios
+  const nAcc = document.querySelectorAll('#acs input[type=checkbox]').length;
+  document.querySelectorAll('#acs input[type=checkbox]').forEach(r => r.checked = true); // todos os acessórios
   Object.entries({ sinistro: '12345', empresa: 'Locadora Alfa', func: 'Carlos', cia: 'Seguradora Beta', localRem: 'Av. Brasil, 100, Chapada', localEnt: 'Oficina Central, Manaus', marca: 'Fiat', ano: '2014', cor: 'Preto', prop: 'Maria Souza', propTel: '(92) 99999-8888', obs: 'Veículo entregue no pátio.', entNome: 'Cliente Teste', entTel: '(92) 98888-7777' }).forEach(([k, v]) => c[k].value = v);
   c.querySelector('input[name=guincho][value=asa_delta]').checked = true;
   const cols = getComputedStyle(document.querySelector('#acs')).gridTemplateColumns.split(' ').length;
@@ -193,7 +196,8 @@ const dmg = await page.evaluate(async () => {
   const pages = (atob(b64).match(/\/Type\s*\/Page\b/g) || []).length;
   const tx = d.innerText, sg = d.querySelector('.sg3').children, r0 = sg[0].getBoundingClientRect(), r1 = sg[1].getBoundingClientRect();
   return { ficha: ['12345', 'Locadora Alfa', 'Carlos', 'Seguradora Beta', 'Av. Brasil, 100, Chapada', 'Oficina Central, Manaus', 'Fiat', '2014', 'Preto', 'Maria Souza', '(92) 99999-8888'].every(v => tx.includes(v)),
-    guincho: d.querySelectorAll('.bx b').length === 1 && /Asa delta/.test(tx), nota: tx.includes('Não nos responsabilizamos por pertences deixados no interior do veículo'),
+    guincho: [...d.querySelectorAll('h3')].find(h => h.textContent === 'Dados da vistoria').nextElementSibling.querySelectorAll('.bx b').length === 1 && /Asa delta/.test(tx),
+    nAcc, accBoxes: d.querySelectorAll('.g1 .bx').length, accMarcados: d.querySelectorAll('.g1 .bx b').length, semAvariado: !/Avariado|Sim\b|Não existe/.test([...d.querySelectorAll('.g1')].map(x => x.innerText).join(' ')), acLabels: [...d.querySelectorAll('.g1 .f')].map(x => x.innerText.replace(/^X\s*/, '').trim()), nota: tx.includes('Não nos responsabilizamos por pertences deixados no interior do veículo'),
     lado: r1.left - r0.right > 40, cols, pages, accCols: getComputedStyle([...d.querySelectorAll('h3')].find(h => h.textContent === 'Acessórios').nextElementSibling).gridTemplateColumns.split(' ').length, red, x: d.querySelectorAll('.vw > div').length, views: d.querySelectorAll('.vw img').length, leg: /Batido \(1\)/.test(d.innerText) && /Quebrado \(1\)/.test(d.innerText), obs: d.innerText.includes('Amassado na porta'), zerou: marks.length === 0, pdf: b64.length > 1000 };
 });
 check(dmg.red > 150, 'as marcas aparecem desenhadas na imagem renderizada para o PDF (pixels vermelhos: ' + dmg.red + ')');
@@ -203,8 +207,11 @@ check(dmg.ficha, 'campos da ficha (sinistro, empresa, funcionário, seguradora, 
 check(dmg.guincho, 'tipo de guincho aparece com a caixa marcada');
 check(dmg.nota, 'observação final sobre pertences no interior do veículo');
 check(dmg.lado, 'assinaturas do cliente e do motorista separadas, uma de cada lado');
-check(dmg.cols === 2, 'acessórios no formulário em 2 colunas');
-check(dmg.accCols === 4, 'acessórios no documento em 4 colunas');
+check(dmg.nAcc === 13, 'formulário tem 13 acessórios, cada um com caixa de seleção (tem ' + dmg.nAcc + ')');
+check(dmg.accBoxes === 13 && dmg.accMarcados === 13 && dmg.semAvariado, 'documento mostra os 13 acessórios com caixa marcada e sem a opção "avariado"');
+check(['Estepe', 'Extintor', 'Macaco / Ferramenta', 'Documento', 'Triângulo', 'Bateria', 'Rádio / CD / Som', 'Acend. de cigarro', 'Farol de milha', 'Calotas', 'Auto falante', 'Marquais', 'Chave principal / reserva'].every((n, i) => dmg.acLabels[i] === n), 'lista de acessórios igual à ficha, na mesma ordem');
+check(dmg.cols === 1, 'acessórios no formulário em uma lista, um embaixo do outro');
+check(dmg.accCols === 1, 'acessórios no documento em uma lista, um embaixo do outro');
 check(dmg.pages === 1, 'checklist completo (todos os campos + 20 acessórios + avarias) sai em 1 página no PDF (tem ' + dmg.pages + ')');
 check(dmg.zerou && dmg.pdf, 'marcas zeram após salvar e o PDF do checklist é gerado');
 
