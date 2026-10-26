@@ -179,9 +179,13 @@ const dmg = await page.evaluate(async () => {
   const c = document.querySelector('#fC'); c.modelo.value = 'Palio Marcas'; c.avObs.value = 'Amassado na porta';
   await saveChecklist({ preventDefault() {}, target: c });
   const d = document.querySelector('#doc');
+  const cm = await html2canvas(d.querySelector('.carmap'), { scale: 1, backgroundColor: '#fff' });
+  const px = cm.getContext('2d').getImageData(0, 0, cm.width, cm.height).data; let red = 0;
+  for (let i = 0; i < px.length; i += 4) if (px[i] > 200 && px[i + 1] < 60 && px[i + 2] < 60) red++;
   const b64 = await docToPdf();
-  return { x: d.querySelectorAll('.carmap > div').length, img: !!d.querySelector('.carmap img[src="carro.jpg"]'), leg: /Batido \(1\)/.test(d.innerText) && /Quebrado \(1\)/.test(d.innerText), obs: d.innerText.includes('Amassado na porta'), zerou: marks.length === 0, pdf: b64.length > 1000 };
+  return { red, x: d.querySelectorAll('.carmap > div').length, img: !!d.querySelector('.carmap img[src="carro.jpg"]'), leg: /Batido \(1\)/.test(d.innerText) && /Quebrado \(1\)/.test(d.innerText), obs: d.innerText.includes('Amassado na porta'), zerou: marks.length === 0, pdf: b64.length > 1000 };
 });
+check(dmg.red > 150, 'as marcas aparecem desenhadas na imagem renderizada para o PDF (pixels vermelhos: ' + dmg.red + ')');
 check(dmg.img && dmg.x === 2 && dmg.leg && dmg.obs, 'documento do checklist mostra o desenho, as marcas, a legenda e a descrição');
 check(dmg.zerou && dmg.pdf, 'marcas zeram após salvar e o PDF do checklist é gerado');
 
