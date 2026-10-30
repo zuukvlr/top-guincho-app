@@ -239,6 +239,12 @@ nav.bar button{font-size:11px}
   <!-- CHECKLIST -->
   <section class="view" id="v-check">
     <form id="fC" onsubmit="return saveChecklist(event)">
+      <div class="card"><h2>Tipo de veículo</h2>
+        <div class="chips">
+          <label class="chip"><input type="radio" name="veiculo" value="carro" checked onchange="setVeic(this.value)"><span>Carro</span></label>
+          <label class="chip"><input type="radio" name="veiculo" value="moto" onchange="setVeic(this.value)"><span>Moto</span></label>
+        </div>
+      </div>
       <div class="card"><h2>Dados da vistoria <span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">(opcionais)</span></h2>
         <label>Sinistro nº</label><input name="sinistro" maxlength="30">
         <div class="row"><div><label>Empresa solicitante</label><input name="empresa" maxlength="80"></div><div><label>Cia. seguradora</label><input name="cia" maxlength="80"></div></div>
@@ -387,6 +393,9 @@ const coSnap=()=>({tel:CO.tel,cnpj:CO.cnpj,addr:CO.addr});
 const REG={frente:'Frente',traseira:'Traseira',lat_dir:'Lateral direita',lat_esq:'Lateral esquerda',teto:'Teto / capô',interior:'Interior / painel'};
 const TIPOS={arranhado:'Arranhado',amassado:'Amassado',piques:'Piques',trincado:'Trincado',quebrado:'Quebrado',falta:'Falta'};
 const ACS2={estepe:'Estepe',extintor:'Extintor',macaco:'Macaco / Ferramenta',documento:'Documento',triangulo:'Triângulo',bateria:'Bateria',radio:'Rádio / CD / Som',acendedor:'Acend. de cigarro',farol_milha:'Farol de milha',calotas:'Calotas',auto_falante:'Auto falante',marquais:'Marquais',chave:'Chave principal / reserva'};
+const ACSM={retro_dir:'Retrovisor direito',retro_esq:'Retrovisor esquerdo',manete_freio:'Manete de freio',manete_embreagem:'Manete de embreagem',manoplas:'Manoplas',alcas:'Alças da garupa',pedal_piloto:'Pedaleiras do piloto',pedal_garupa:'Pedaleiras da garupa',descanso:'Descanso lateral',farol:'Farol dianteiro',lanterna:'Lanterna traseira',pisca_de:'Pisca dianteiro esquerdo',pisca_dd:'Pisca dianteiro direito',pisca_te:'Pisca traseiro esquerdo',pisca_td:'Pisca traseiro direito',escapamento:'Escapamento',banco:'Banco'};
+let veic='carro';
+const accList=v=>v==='moto'?ACSM:ACS2;
 const ACS={estepe:'Estepe',macaco:'Macaco',chave_roda:'Chave de roda',triangulo:'Triângulo',extintor:'Extintor',manual:'Manual',chave_reserva:'Chave reserva',tapetes:'Tapetes',radio:'Rádio / multimídia',antena:'Antena',calotas:'Calotas',farol_aux:'Farol auxiliar',alarme:'Alarme',retrovisor:'Retrovisor interno',placa:'Placa veicular',forro_porta:'Forro de porta',banco_diant:'Banco dianteiro',banco_tras:'Banco traseiro',protetor_carter:'Protetor de cárter',cartao_gps:'Cartão / GPS'};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const A=window.Android;
@@ -478,7 +487,7 @@ function renderHome(){
 function rowHTML(o){
   if(o.t==='r'){const r=o.x,st=r.cancelado?['Cancelado','pend']:r.recv>=r.final?['Recebido','ok']:r.recv>0?['Parcial','par']:['Pendente','pend'];
     return `<div class="item" onclick="openDoc('r',${r.id})"><div class="t"><b>Recibo ${num6(r.id)} · ${esc(r.client)}</b><small>${dBR(r.issue)} · ${money(r.final)}</small></div><span class="tag ${st[1]}">${st[0]}</span></div>`}
-  const c=o.x;return `<div class="item" onclick="openDoc('c',${c.id})"><div class="t"><b>Checklist ${num6(c.id)} · ${esc(c.modelo)}</b><small>${dBR(c.data)}${c.placa?' · '+esc(c.placa):''}</small></div><span class="tag">Checklist</span></div>`;
+  const c=o.x;return `<div class="item" onclick="openDoc('c',${c.id})"><div class="t"><b>Checklist ${num6(c.id)} · ${esc(c.modelo)}</b><small>${dBR(c.data)}${c.placa?' · '+esc(c.placa):''}</small></div><span class="tag">Checklist${c.veiculo==='moto'?' · Moto':''}</span></div>`;
 }
 function renderHist(){
   const q=($('#busca').value||'').toLowerCase(), f=(document.querySelector('[name=hf]:checked')||{}).value||'all';
@@ -577,8 +586,9 @@ function carOne(ms){ // marcas da v1.0.18 (u:1): foto única do veículo
 }
 /* vistas separadas, no formato da ficha: esquerda/direita/topo à esquerda; frente/traseira/legenda à direita */
 const VIEWS={le:{src:'v_le.png',w:.59},ld:{src:'v_ld.png',w:.59},tp:{src:'v_tp.png',w:.59},fr:{src:'v_fr.png',w:.39},tr:{src:'v_tr.png',w:.39}};
+const VIEWS_M={m1:{src:'v_m1.png',w:.694},m2:{src:'v_m2.png',w:.694},mf:{src:'v_mf.png',w:.286},mt:{src:'v_mt.png',w:.286}};
 function viewHTML(k,ms){
-  const V=VIEWS[k],mw=(5/(V.w*100)*100).toFixed(2); // marca com ~5% da largura total do mapa
+  const V=VIEWS[k]||VIEWS_M[k],mw=(5/(V.w*100)*100).toFixed(2); // marca com ~5% da largura total do mapa
   return `<div class="vw" data-v="${k}" style="position:relative"><img src="${V.src}" alt="" style="display:block;width:100%;height:auto">${ms.filter(m=>m.v===k).map(m=>`<div style="position:absolute;left:${(m.x*100).toFixed(2)}%;top:${(m.y*100).toFixed(2)}%;width:${mw}%;padding-top:${mw}%;transform:translate(-50%,-50%)">${markInner(m.t)}</div>`).join('')}</div>`;
 }
 function legendBox(ms){
@@ -589,12 +599,21 @@ function carViews(ms){
   return `<div class="carmap" style="display:flex;gap:2%;align-items:flex-start;background:#fff"><div style="width:59%;display:flex;flex-direction:column;gap:6px">${viewHTML('le',ms)}${viewHTML('ld',ms)}${viewHTML('tp',ms)}</div><div style="width:39%;display:flex;flex-direction:column;gap:6px">${viewHTML('fr',ms)}${viewHTML('tr',ms)}${legendBox(ms)}</div></div>`;
 }
 const marksKind=ms=>!ms||!ms.length?'views':ms.some(m=>!m.u)?'legacy':ms.some(m=>m.u===1)?'one':'views';
-function carHTML(ms){
+function legendBar(ms){
+  const n=t=>ms.filter(x=>x.t===t).length,it=(i,l,c)=>`<span><b style="color:#e10600;font-size:13px">${i}</b> ${l} <span style="color:#666">(${c})</span></span>`;
+  return `<div style="margin-top:6px;border:1.5px solid #222;border-radius:6px;padding:5px 9px;font-size:11px;color:#111;background:#fff;display:flex;gap:16px;flex-wrap:wrap;align-items:center"><b style="font-size:10px;letter-spacing:.3px">ASSINALE CONFORME LEGENDA:</b>${it('X','Batido',n('X'))}${it('–','Riscado',n('-'))}${it('O','Quebrado',n('O'))}</div>`;
+}
+function motoViews(ms){
+  ms=ms||[];
+  return `<div class="carmap" style="background:#fff"><div style="display:grid;grid-template-columns:69.4% 28.6%;gap:6px 2%;align-items:start">${viewHTML('m1',ms)}${viewHTML('mf',ms)}${viewHTML('m2',ms)}${viewHTML('mt',ms)}</div>${legendBar(ms)}</div>`;
+}
+function carHTML(ms,v){
+  if(v==='moto')return motoViews(ms);
   ms=ms||[];const k=marksKind(ms);
   return k==='legacy'?carSvg(ms):k==='one'?carOne(ms):carViews(ms);
 }
 let marks=[];
-function renderDmg(){const b=$('#dmgBox');if(!b)return;b.innerHTML=carHTML(marks);$('#dmgCount').textContent=marks.length?marks.length+' marca(s)':''}
+function renderDmg(){const b=$('#dmgBox');if(!b)return;b.innerHTML=carHTML(marks,veic);$('#dmgCount').textContent=marks.length?marks.length+' marca(s)':''}
 function dmgUndo(){marks.pop();renderDmg()}
 function dmgClear(){if(marks.length&&!confirm('Remover todas as marcas?'))return;marks=[];renderDmg()}
 (()=>{const b=$('#dmgBox');if(!b)return;
@@ -617,9 +636,19 @@ function initCheck(){
   if(!$('#pneus').children.length){
     $('#pneus').innerHTML=[['diant','Dianteiros'],['tras','Traseiros'],['estepe','Estepe']].map(([k,n])=>`<div><label>${n}</label><select name="pn_${k}"><option value="">—</option><option value="bom">Bom</option><option value="medio">Médio</option><option value="ruim">Ruim</option></select></div>`).join('');
     $('#comb').innerHTML=['E','1/4','1/2','3/4','F'].map(c=>`<label class="chip"><input type="radio" name="comb" value="${c}"><span>${c}</span></label>`).join('');
-    $('#acs').innerHTML=Object.entries(ACS2).map(([k,n])=>`<div class="ac"><span class="nm">${n}</span><div class="sn"><label><input type="checkbox" name="acs_${k}" value="S" onchange="snPick(this)"> Sim</label><label><input type="checkbox" name="acs_${k}" value="N" onchange="snPick(this)"> Não</label></div></div>`).join('');
+    renderAcs();
   }
   setupPad('ent');renderDmg();
+}
+function renderAcs(){
+  $('#acs').innerHTML=Object.entries(accList(veic)).map(([k,n])=>`<div class="ac"><span class="nm">${n}</span><div class="sn"><label><input type="checkbox" name="acs_${k}" value="S" onchange="snPick(this)"> Sim</label><label><input type="checkbox" name="acs_${k}" value="N" onchange="snPick(this)"> Não</label></div></div>`).join('');
+}
+function applyVeic(){const f=$('#fC'),e=f.pn_estepe;if(e){e.parentElement.style.display=veic==='moto'?'none':'';if(veic==='moto')e.value=''}}
+function setVeic(v){
+  if(v===veic)return;
+  const any=marks.length||$$('#acs input:checked').length;
+  if(any&&!confirm('Trocar o tipo de veículo apaga as marcas do mapa e as respostas dos acessórios. Continuar?')){const r=document.querySelector(`input[name=veiculo][value="${veic}"]`);if(r)r.checked=true;return}
+  veic=v;marks=[];renderAcs();renderDmg();applyVeic();
 }
 function snPick(cb){if(cb.checked)$$(`[name="${cb.name}"]`).forEach(x=>{if(x!==cb)x.checked=false})}
 function toggleRadio(r){if(r.dataset.was==='1'){r.checked=false;r.dataset.was='0'}else{$$(`[name="${r.name}"]`).forEach(x=>x.dataset.was='0');r.dataset.was='1'}}
@@ -640,12 +669,12 @@ function padData(k){const p=pads[k];if(!p||!p.dirty)return'';
 async function saveChecklist(e){
   e.preventDefault();const f=e.target,pick=n=>(f.querySelector(`[name="${n}"]:checked`)||{}).value||'';
   const btn=f.querySelector('[type=submit]');btn.disabled=true;const id=await nextId('checklists');
-  const acs={};Object.keys(ACS2).forEach(k=>{const x=f.querySelector(`[name="acs_${k}"]:checked`);if(x)acs[k]=x.value});
+  const acs={};Object.keys(accList(veic)).forEach(k=>{const x=f.querySelector(`[name="acs_${k}"]:checked`);if(x)acs[k]=x.value});
   const c={id,ts:Date.now(),tipo:pick('tipo'),placa:f.placa.value.trim().toUpperCase(),km:f.km.value.trim(),data:f.data.value,hora:f.hora.value,modelo:f.modelo.value.trim(),uf:f.uf.value.trim(),
-    sinistro:f.sinistro.value.trim(),empresa:f.empresa.value.trim(),cia:f.cia.value.trim(),func:f.func.value.trim(),guincho:pick('guincho'),localRem:f.localRem.value.trim(),localEnt:f.localEnt.value.trim(),marca:f.marca.value.trim(),ano:f.ano.value.trim(),cor:f.cor.value.trim(),prop:f.prop.value.trim(),propTel:f.propTel.value.trim(),
-    pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),marks:marks.map(m=>({...m})),avObs:f.avObs.value.trim(),acs,obs:f.obs.value.trim(),
+    veiculo:veic,sinistro:f.sinistro.value.trim(),empresa:f.empresa.value.trim(),cia:f.cia.value.trim(),func:f.func.value.trim(),guincho:pick('guincho'),localRem:f.localRem.value.trim(),localEnt:f.localEnt.value.trim(),marca:f.marca.value.trim(),ano:f.ano.value.trim(),cor:f.cor.value.trim(),prop:f.prop.value.trim(),propTel:f.propTel.value.trim(),
+    pneus:{diant:f.pn_diant.value,tras:f.pn_tras.value,estepe:veic==='moto'?'':f.pn_estepe.value},crlv:pick('crlv'),comb:pick('comb'),sujo:pick('sujo'),marks:marks.map(m=>({...m})),avObs:f.avObs.value.trim(),acs,obs:f.obs.value.trim(),
     entNome:f.entNome.value.trim(),entTel:f.entTel.value.trim(),motNome:f.motNome.value.trim(),sigEnt:padData('ent'),sigMot:'signature.png'};
-  c.co=coSnap();checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');marks=[];renderDmg();openDoc('c',id);return false;
+  c.co=coSnap();checks.push(c);put('checklists',c);btn.disabled=false;f.reset();f.motNome.value=CO.signer;clearPad('ent');marks=[];veic='carro';renderAcs();renderDmg();applyVeic();openDoc('c',id);return false;
 }
 function checkDoc(c){
   const C=c.co||CO;
@@ -657,13 +686,14 @@ function checkDoc(c){
   const info=[c.sinistro,c.empresa,c.func,c.cia,c.guincho,c.localRem,c.localEnt].some(Boolean)?`<h3>Dados da vistoria</h3><div class="g g3 gi">${Fo('Sinistro nº',c.sinistro)}${Fo('Empresa solicitante',c.empresa)}${Fo('Funcionário',c.func)}${Fo('Cia. seguradora',c.cia)}<div class="f w"><small>Guincho utilizado:</small>${Object.entries(GU).map(([k,n])=>`<span style="margin-right:12px;white-space:nowrap">${bx(c.guincho===k)}${n}</span>`).join('')}</div>${Fo('Local de remoção',c.localRem,'w')}${Fo('Local de entrega',c.localEnt,'w')}</div>`:'';
   const oldAv=()=>'<table class="av">'+Object.entries(REG).map(([k,n])=>{const a=(c.av||{})[k]||{ok:true,tipos:[]};return `<tr><td>${n}</td><td style="text-align:left">${a.ok?'Sem avarias':a.tipos.map(t=>TIPOS[t]).join(', ')+(a.texto?' — '+esc(a.texto):'')||'—'}</td></tr>`}).join('')+'</table>';
   const kind=marksKind(c.marks),desc=c.avObs?`<p style="margin:6px 0 0"><b>Descrição:</b> ${esc(c.avObs)}</p>`:'';
-  const dmg=!c.marks?oldAv():kind==='views'?`<div style="max-width:500px;margin:0 auto">${carViews(c.marks)}</div>`+desc:`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${desc}`;
+  const moto=c.veiculo==='moto',LST=accList(c.veiculo||'carro');
+  const dmg=!c.marks?oldAv():moto?`<div style="max-width:540px;margin:0 auto">${motoViews(c.marks)}</div>`+desc:kind==='views'?`<div style="max-width:500px;margin:0 auto">${carViews(c.marks)}</div>`+desc:`<div style="max-width:430px;margin:4px auto 0">${carHTML(c.marks)}</div>${legendHTML(c.marks)}${desc}`;
   const accRow=(n,v)=>`<div class="f" style="display:flex;justify-content:space-between;align-items:center"><span>${n}</span><span style="white-space:nowrap">${bx(v==='S')}Sim&nbsp;&nbsp;&nbsp;${bx(v==='N')}Não</span></div>`;
-  const acs=c.acs?Object.entries(ACS2).map(([k,n])=>accRow(n,c.acs[k])).join(''):c.acc?Object.entries(ACS2).map(([k,n])=>accRow(n,c.acc.includes(k)?'S':'N')).join(''):Object.entries(ACS).filter(([k])=>(c.ac||{})[k]).map(([k,n])=>`<div class="f"><small>${n}:</small>${{S:'Sim',N:'Não',A:'Avariado'}[c.ac[k]]}</div>`).join('');
+  const acs=c.acs?Object.entries(LST).map(([k,n])=>accRow(n,c.acs[k])).join(''):c.acc?Object.entries(ACS2).map(([k,n])=>accRow(n,c.acc.includes(k)?'S':'N')).join(''):Object.entries(ACS).filter(([k])=>(c.ac||{})[k]).map(([k,n])=>`<div class="f"><small>${n}:</small>${{S:'Sim',N:'Não',A:'Avariado'}[c.ac[k]]}</div>`).join('');
   return `<div class="ck"><div class="hd">${logoHTML()}<div class="co"><b>${CO.nome}</b><br>${C.tel}<br>CNPJ: ${C.cnpj}${C.addr?'<br>'+esc(C.addr):''}</div></div>
-  <div class="tt"><h2>CHECKLIST Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
+  <div class="tt"><h2>CHECKLIST${moto?' DE MOTO':''} Nº ${num6(c.id)}</h2><span>${dBR(c.data)} ${esc(c.hora)}</span></div>
   ${info}
-  <h3>Veículo, pneus e documento</h3><div class="g g3 gi">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${Fo('Marca',c.marca)}${Fo('Ano',c.ano)}${Fo('Cor',c.cor)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}${Fo('Proprietário',c.prop)}${Fo('Telefone',c.propTel)}${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
+  <h3>Veículo, pneus e documento</h3><div class="g g3 gi">${F('Modelo',c.modelo)}${F('Placa',c.placa)}${F('Tipo',c.tipo)}${Fo('Marca',c.marca)}${Fo('Ano',c.ano)}${Fo('Cor',c.cor)}${F('KM',c.km)}${F('UF / Cidade',c.uf)}${F('Combustível',c.comb)}${Fo('Proprietário',c.prop)}${Fo('Telefone',c.propTel)}${F('Pneus dianteiros',PN[c.pneus.diant])}${F('Pneus traseiros',PN[c.pneus.tras])}${moto?'':F('Estepe',PN[c.pneus.estepe])}${F('CRLV no veículo',sn(c.crlv))}${F('Excessivamente sujo',sn(c.sujo))}</div>
   <h3>Avarias</h3>${dmg}
   ${acs?`<h3>Acessórios</h3><div class="g g1 gi" style="max-width:340px">${acs}</div>`:''}
   ${c.obs?`<h3>Observações</h3><p style="margin:0">${esc(c.obs)}</p>`:''}
@@ -691,7 +721,7 @@ async function docToPdf(){
   await Promise.all([...clone.querySelectorAll('img')].map(i=>i.complete?1:new Promise(r=>{i.onload=i.onerror=r})));
   let canvas;try{canvas=await html2canvas(clone,{scale:2,backgroundColor:'#fff'})}finally{holder.remove()}
   const pdf=new window.jspdf.jsPDF({unit:'mm',format:'a4'}),W=210,H=297,imgH=canvas.height*W/canvas.width;
-  if(imgH<=H*2.2){ // uma página: reduz para caber, centralizado
+  if(imgH<=H*2.8){ // uma página: reduz para caber, centralizado
     const k=Math.min(1,H/imgH),w=W*k,hh=imgH*k;
     pdf.addImage(canvas.toDataURL('image/jpeg',.92),'JPEG',(W-w)/2,0,w,hh);
   }else{

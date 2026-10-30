@@ -218,6 +218,39 @@ check(dmg.accCols === 1, 'acessórios no documento em uma lista, um embaixo do o
 check(dmg.pages === 1, 'checklist completo (todos os campos + 20 acessórios + avarias) sai em 1 página no PDF (tem ' + dmg.pages + ')');
 check(dmg.zerou && dmg.pdf, 'marcas zeram após salvar e o PDF do checklist é gerado');
 
+// ---------- checklist de moto ----------
+const MOTO = ['Retrovisor direito', 'Retrovisor esquerdo', 'Manete de freio', 'Manete de embreagem', 'Manoplas', 'Alças da garupa', 'Pedaleiras do piloto', 'Pedaleiras da garupa', 'Descanso lateral', 'Farol dianteiro', 'Lanterna traseira', 'Pisca dianteiro esquerdo', 'Pisca dianteiro direito', 'Pisca traseiro esquerdo', 'Pisca traseiro direito', 'Escapamento', 'Banco'];
+await page.evaluate(() => { window.confirm = () => true; document.querySelector('#login').style.display = 'none'; go('check'); });
+await page.locator('input[name=veiculo][value=moto]').check({ force: true });
+const mf = await page.evaluate(() => ({
+  itens: [...document.querySelectorAll('#acs .ac .nm')].map(x => x.textContent), caixas: document.querySelectorAll('#acs input[type=checkbox]').length,
+  estepeOculto: getComputedStyle(document.querySelector('[name=pn_estepe]').parentElement).display === 'none', vistas: document.querySelectorAll('#dmgBox .vw img').length,
+}));
+check(JSON.stringify(mf.itens) === JSON.stringify(MOTO) && mf.caixas === 34, 'moto: 17 acessórios na ordem pedida, cada um com Sim e Não (itens: ' + mf.itens.length + ')');
+check(mf.estepeOculto, 'moto: campo de estepe nos pneus some');
+check(mf.vistas === 4, 'moto: mapa de avarias com 4 vistas (duas laterais, frente e traseira)');
+await page.locator('#dmgBox').scrollIntoViewIfNeeded();
+const mb = await page.locator('#dmgBox .vw[data-v="m1"] img').boundingBox();
+await page.locator('input[name=dtool][value="X"]').check({ force: true }); await page.mouse.click(mb.x + mb.width * 0.5, mb.y + mb.height * 0.5);
+await page.locator('input[name=dtool][value="O"]').check({ force: true });
+const mfr = await page.locator('#dmgBox .vw[data-v="mf"] img').boundingBox(); await page.mouse.click(mfr.x + mfr.width * 0.5, mfr.y + mfr.height * 0.3);
+const md = await page.evaluate(async () => {
+  const c = document.querySelector('#fC');
+  Object.entries({ marca: 'Honda', placa: 'JXI9927', sinistro: '999', localRem: 'Av. Brasil, 100', localEnt: 'Oficina Central', prop: 'Maria Souza', propTel: '(92) 99999-8888', obs: 'Moto entregue no pátio.', entNome: 'Cliente Teste' }).forEach(([k, v]) => c[k].value = v);
+  document.querySelectorAll('#acs input[value=S]').forEach(r => r.checked = true);
+  c.pn_diant.value = 'bom'; c.pn_tras.value = 'medio';
+  await saveChecklist({ preventDefault() {}, target: c });
+  const d = document.querySelector('#doc'), tx = d.innerText, sv = checks[checks.length - 1];
+  const b64 = await docToPdf();
+  return { veic: sv.veiculo, marks: sv.marks.map(m => m.v).join(','), semEstepe: !/Estepe/i.test(tx) && sv.pneus.estepe === '', titulo: /CHECKLIST DE MOTO/.test(tx), itens: [...d.querySelectorAll('.g1 .f')].length, vistas: d.querySelectorAll('.vw img').length, marcas: d.querySelectorAll('.vw > div').length,
+    pages: (atob(b64).match(/\/Type\s*\/Page\b/g) || []).length, voltouCarro: veic === 'carro' && document.querySelectorAll('#acs .ac').length === 13 };
+});
+check(md.veic === 'moto' && md.marks === 'm1,mf', 'moto: checklist salvo como moto, com marcas nas vistas tocadas (' + md.marks + ')');
+check(md.semEstepe && md.titulo, 'moto: documento sem estepe nos pneus e com título "CHECKLIST DE MOTO"');
+check(md.itens === 17 && md.vistas === 4 && md.marcas === 2, 'moto: documento com 17 acessórios, 4 vistas e as 2 marcas');
+check(md.pages === 1, 'moto: PDF completo sai em 1 página (tem ' + md.pages + ')');
+check(md.voltouCarro, 'após salvar, o formulário volta para Carro com os 13 acessórios');
+
 await browser.close();
 server.close();
 if (fails.length) { console.error('\n' + fails.length + ' verificação(ões) falharam'); process.exit(1); }
