@@ -251,6 +251,18 @@ check(md.itens === 17 && md.vistas === 4 && md.marcas === 2, 'moto: documento co
 check(md.pages === 1, 'moto: PDF completo sai em 1 página (tem ' + md.pages + ')');
 check(md.voltouCarro, 'após salvar, o formulário volta para Carro com os 13 acessórios');
 
+// rótulos de lado em cada vista (carro e moto) e marca na lateral espelhada da moto
+const lab = await page.evaluate(() => {
+  const txt = html => { const d = document.createElement('div'); d.innerHTML = html; return d.innerText || d.textContent; };
+  const car = txt(carViews([])), moto = txt(motoViews([]));
+  const ms = [{ u: 2, v: 'm2', x: 0.2, y: 0.5, t: 'X', f: 1 }, { u: 2, v: 'm2', x: 0.2, y: 0.5, t: 'X' }];
+  const html = viewHTML('m2', ms), lefts = [...html.matchAll(/left:([\d.]+)%;top:50\.00%/g)].map(m => +m[1]);
+  return { car, moto, lefts };
+});
+check(['LADO ESQUERDO', 'LADO DIREITO', 'FRENTE', 'TRASEIRA', 'TOPO'].every(x => lab.car.includes(x)) && /DIREITO/.test(lab.car) && /ESQUERDO/.test(lab.car), 'carro: cada vista tem rótulo (lado esquerdo, lado direito, frente, traseira, topo)');
+check(['LADO ESQUERDO', 'LADO DIREITO', 'FRENTE', 'TRASEIRA'].every(x => lab.moto.includes(x)), 'moto: cada vista tem rótulo (lado esquerdo, lado direito, frente, traseira)');
+check(lab.lefts.length === 2 && lab.lefts[0] === 20 && lab.lefts[1] === 80, 'moto: marcas da lateral espelhada novas ficam onde foram tocadas e as antigas têm o x invertido');
+
 await browser.close();
 server.close();
 if (fails.length) { console.error('\n' + fails.length + ' verificação(ões) falharam'); process.exit(1); }

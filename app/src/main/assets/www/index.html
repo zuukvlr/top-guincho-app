@@ -587,9 +587,18 @@ function carOne(ms){ // marcas da v1.0.18 (u:1): foto única do veículo
 /* vistas separadas, no formato da ficha: esquerda/direita/topo à esquerda; frente/traseira/legenda à direita */
 const VIEWS={le:{src:'v_le.png',w:.59},ld:{src:'v_ld.png',w:.59},tp:{src:'v_tp.png',w:.59},fr:{src:'v_fr.png',w:.39},tr:{src:'v_tr.png',w:.39}};
 const VIEWS_M={m1:{src:'v_m1.png',w:.694},m2:{src:'v_m2.png',w:.694},mf:{src:'v_mf.png',w:.286},mt:{src:'v_mt.png',w:.286}};
+/* Rótulos em cada vista: o lado do veículo (direito/esquerdo) fica sempre indicado.
+   Frente: o lado DIREITO do veículo aparece à esquerda da imagem; traseira: o lado ESQUERDO é que aparece à esquerda. */
+const LBL={le:{cap:'LADO ESQUERDO'},ld:{cap:'LADO DIREITO'},tp:{cap:'TOPO',top:'DIREITO',bottom:'ESQUERDO'},fr:{cap:'FRENTE',left:'DIR',right:'ESQ'},tr:{cap:'TRASEIRA',left:'ESQ',right:'DIR'},
+  m1:{cap:'LADO DIREITO'},m2:{cap:'LADO ESQUERDO'},mf:{cap:'FRENTE',left:'DIR',right:'ESQ'},mt:{cap:'TRASEIRA',left:'ESQ',right:'DIR'}};
+function labelsHTML(k){
+  const L=LBL[k]||{},chip=(pos,t,dark)=>`<span style="position:absolute;${pos};pointer-events:none;font:700 8px/1 Arial,sans-serif;letter-spacing:.2px;padding:2px 4px;border-radius:3px;white-space:nowrap;${dark?'background:#222;color:#fff':'background:#fff;color:#222;border:1px solid #222'}">${t}</span>`;
+  return (L.cap?chip('left:2px;top:2px',L.cap,true):'')+(L.left?chip('left:2px;bottom:2px','◀ '+L.left):'')+(L.right?chip('right:2px;bottom:2px',L.right+' ▶'):'')+(L.top?chip('left:2px;top:16px','▲ '+L.top):'')+(L.bottom?chip('left:2px;bottom:2px','▼ '+L.bottom):'');
+}
 function viewHTML(k,ms){
   const V=VIEWS[k]||VIEWS_M[k],mw=(5/(V.w*100)*100).toFixed(2); // marca com ~5% da largura total do mapa
-  return `<div class="vw" data-v="${k}" style="position:relative"><img src="${V.src}" alt="" style="display:block;width:100%;height:auto">${ms.filter(m=>m.v===k).map(m=>`<div style="position:absolute;left:${(m.x*100).toFixed(2)}%;top:${(m.y*100).toFixed(2)}%;width:${mw}%;padding-top:${mw}%;transform:translate(-50%,-50%)">${markInner(m.t)}</div>`).join('')}</div>`;
+  const fx=m=>k==='m2'&&!m.f?1-m.x:m.x; // m2 foi espelhada: marcas antigas (sem f) têm o x invertido
+  return `<div class="vw" data-v="${k}" style="position:relative"><img src="${V.src}" alt="" style="display:block;width:100%;height:auto">${labelsHTML(k)}${ms.filter(m=>m.v===k).map(m=>`<div style="position:absolute;left:${(fx(m)*100).toFixed(2)}%;top:${(m.y*100).toFixed(2)}%;width:${mw}%;padding-top:${mw}%;transform:translate(-50%,-50%)">${markInner(m.t)}</div>`).join('')}</div>`;
 }
 function legendBox(ms){
   const n=t=>ms.filter(x=>x.t===t).length,row=(i,l,c)=>`<div style="margin-top:3px"><b style="color:#e10600;display:inline-block;width:14px;font-size:13px">${i}</b>${l} <span style="color:#666">(${c})</span></div>`;
@@ -623,7 +632,7 @@ function dmgClear(){if(marks.length&&!confirm('Remover todas as marcas?'))return
     if(x<0||x>1||y<0||y>1)return;
     const hit=marks.findIndex(m=>m.v===k&&Math.hypot((m.x-x)*r.width,(m.y-y)*r.height)<18);
     if(hit>=0)marks.splice(hit,1);
-    else marks.push({u:2,v:k,x:+x.toFixed(4),y:+y.toFixed(4),t:($('input[name=dtool]:checked')||{}).value||'X'});
+    else marks.push({u:2,v:k,x:+x.toFixed(4),y:+y.toFixed(4),t:($('input[name=dtool]:checked')||{}).value||'X',...(k==='m2'?{f:1}:{})});
     renderDmg();
   });
 })();
